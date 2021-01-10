@@ -4,6 +4,7 @@
 #define _NETDATA_EBPF_PROCESS_ 1
 
 #include <linux/sched.h>
+#include <linux/blkdev.h>
 
 struct netdata_error_report_t {
     char comm[TASK_COMM_LEN];
@@ -114,5 +115,34 @@ enum socket_counters {
 
     NETDATA_SOCKET_COUNTER
 };
+
+// latency_kern.c
+#define NETDATA_LATENCY_MAX_BINS 16
+#define NETDATA_LATENCY_MAX_BINS_POS (NETDATA_LATENCY_MAX_BINS - 1)
+#define NETDATA_LATENCY_HISTOGRAM_LENGTH  (NETDATA_LATENCY_MAX_BINS * 512)
+
+typedef struct block_key {
+    __u32 bin;
+    char disk[DISK_NAME_LEN];
+} block_key_t;
+
+struct netdata_latency_pid_stat {
+    // We are not creating histogram per PID, because this would need variables
+    // instead vectors (https://docs.cilium.io/en/v1.9/bpf/), this would become expensive
+    __u64 try_to_wake_up_call;
+    __u64 blk_start_request_call;
+    __u64 io_done;
+    __u64 blk_mq_start_request_call;
+};
+
+enum latency_counters {
+    NETDATA_KEY_TRY_TO_WAKE_UP,
+    NETDATA_KEY_CALLS_BLOCK_START_REQUEST,
+    NETDATA_KEY_CALLS_BLOCK_MQ_START_REQUEST,
+    NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE,
+
+    NETDATA_LATENCY_COUNTER
+};
+
 
 #endif /* _NETDATA_EBPF_PROCESS_ */
