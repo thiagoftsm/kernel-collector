@@ -5,8 +5,44 @@
 #include "bpf_helpers.h"
 #include "netdata_ebpf.h"
 
-// I won't have latency per PID
-// Use Array map to make the histogram
+// /sys/kernel/debug/tracing/events/block/block_rq_issue/
+struct netdata_block_rq_issue {
+    u64 pad;                    // This is not used with eBPF
+    dev_t dev;                  // offset:8;       size:4; signed:0;
+    sector_t sector;            // offset:16;      size:8; signed:0;
+    unsigned int nr_sector;     // offset:24;      size:4; signed:0;
+    unsigned int bytes;         // offset:28;      size:4; signed:0;
+    char rwbs[8];               // offset:32;      size:8; signed:1;
+    char comm[16];              // offset:40;      size:16;        signed:1;
+    int data_loc_name;          // offset:56;      size:4; signed:1; (https://github.com/iovisor/bpftrace/issues/385)
+};
+
+// /sys/kernel/debug/tracing/events/block/block_rq_complete
+struct netdata_block_rq_complete {
+    u64 pad;                    // This is not used with eBPF
+    dev_t dev;                  // offset:8;       size:4; signed:0;
+    sector_t sector;            // offset:16;      size:8; signed:0;
+    unsigned int nr_sector;     // offset:24;      size:4; signed:0;
+    int error;                  // offset:28;      size:4; signed:1;
+    char rwbs[8];               // offset:32;      size:8; signed:1;
+    int data_loc_name;          // offset:40;      size:4; signed:1; ()https://lists.linuxfoundation.org/pipermail/iovisor-dev/2017-February/000627.html
+};
+
+typedef struct netdata_disk_key {
+    dev_t dev;
+    sector_t sector;
+} netdata_disk_key_t;
+
+typedef struct netdata_disk_value {
+    u64 timestamp;
+    unsigned int bytes;
+} netdata_disk_value_t;
+
+/************************************************************************************
+ *     
+ *                                 MAPS
+ *     
+ ***********************************************************************************/
 
 //CPU
 struct bpf_map_def SEC("maps") tbl_cpu_stats = {
@@ -70,8 +106,9 @@ struct bpf_map_def SEC("maps") tmp_disk_stats = {
 #else
     .type = BPF_MAP_TYPE_PERCPU_HASH,
 #endif
-    .key_size = sizeof(__u64),
-    .value_size = sizeof(__u64),
+    //.key_size = sizeof(__u64),
+    .key_size = sizeof(netdata_disk_key_t),
+    .value_size = sizeof(netdata_disk_value_t),
     .max_entries = 8192
 };
 
@@ -163,15 +200,17 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
     } 
 
     switch (hist_idx) {
-        case NETDATA_KEY_CALLS_BLOCK_START_REQUEST: {
+        case NETDATA_KEY_CALLS_BLOCK_RQ_ISSUE: {
                 netdata_update_u64(&fill->blk_start_request_call, 1);
                 break;
             }
+                                               /*
         case NETDATA_KEY_CALLS_BLOCK_MQ_START_REQUEST: {
                 netdata_update_u64(&fill->blk_mq_start_request_call, 1);
                 break;
             }
-        case NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE: {
+            */
+        case NETDATA_KEY_CALLS_BLOCK_RQ_COMPLETE: {
                 netdata_update_u64(&fill->io_done, 1);
                 break;
             }
@@ -203,6 +242,101 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
  *     
  ***********************************************************************************/
 
+/*
+static void netdata_trace_enqueue(u32 pid, u32 tgid)
+{
+    if (!pid && !tgid)
+        return;
+
+    u64 ts = bpf_ktime_get_ns();
+    bpf_map_update_elem(&tmp_cpu_stats, &pid, &ts, BPF_ANY);
+}
+*/
+
+SEC("kprobe/ttwu_do_wakeup")
+int netdata_ttwu_do_wakeup(struct pt_regs* ctx)
+{
+    /*
+    struct task_struct *ts = (struct task_struct *)PT_REGS_PARM2(ctx);
+    u32 pid, tgid;
+
+    bpf_probe_read(&pid, sizeof(pid), &ts->pid);
+    bpf_probe_read(&tgid, sizeof(tgid), &ts->tgid);
+    */
+
+    netdata_update_global(NETDATA_KEY_TRY_TO_WAKE_UP);
+
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    u64 ts = bpf_ktime_get_ns();
+
+    bpf_map_update_elem(&tmp_cpu_stats, &pid_tgid, &ts, BPF_ANY);
+
+    //netdata_trace_enqueue(pid, tgid);
+    return 0;
+}
+
+SEC("kprobe/wake_up_new_task")
+int netdata_wake_up_new_task(struct pt_regs* ctx)
+{
+    /*
+    struct task_struct *ts = (struct task_struct *)PT_REGS_PARM1(ctx);
+    u32 pid, tgid;
+
+    bpf_probe_read(&pid, sizeof(pid), &ts->pid);
+    bpf_probe_read(&tgid, sizeof(tgid), &ts->tgid);
+    */
+
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    u64 ts = bpf_ktime_get_ns();
+
+    bpf_map_update_elem(&tmp_cpu_stats, &pid_tgid, &ts, BPF_ANY);
+
+    netdata_update_global(NETDATA_KEY_WAKE_UP);
+
+    //netdata_trace_enqueue(pid, tgid);
+    return 0;
+}
+
+SEC("kprobe/finish_task_switch")
+int netdata_finish_task_switch(struct pt_regs* ctx)
+{
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    __u32 pid = (__u32)(pid_tgid >> 32);
+    __u32 tgid = (__u32)( 0x00000000FFFFFFFF & pid_tgid);
+    long state;
+    __u64 *fill;
+    __u64 *nl, data;
+
+    struct task_struct *prev = (struct task_struct *)PT_REGS_PARM1(ctx);
+
+    bpf_probe_read(&state, sizeof(state), (void *)&prev->state);
+
+    netdata_update_global(NETDATA_KEY_FINISH_TASK_SWITCH);
+
+    /*
+    if (state == TASK_RUNNING)
+        netdata_trace_enqueue(pid, tgid);
+     */
+
+    fill = bpf_map_lookup_elem(&tmp_cpu_stats ,&pid_tgid);
+    if (!fill) {
+        return 0;
+    }
+
+    u64 curr = bpf_ktime_get_ns();
+    u32 offset = select_idx((curr - *fill)/1000);
+    nl = bpf_map_lookup_elem(&tbl_cpu_stats ,&offset);
+    if (nl) {
+        netdata_update_u64(nl, 1);
+    } else {
+        data = 1;
+        bpf_map_update_elem(&tbl_cpu_stats, &offset, &data, BPF_ANY);
+    }
+
+    return 0;
+}
+
+/*
 SEC("kprobe/try_to_wake_up")
 int netdata_enter_try_to_wake_up(struct pt_regs* ctx)
 {
@@ -232,7 +366,7 @@ int netdata_return_try_to_wake_up(struct pt_regs* ctx)
 
     bpf_map_delete_elem(&tmp_cpu_stats, &pid_tgid);
 
-    offset = select_idx((ts - *fill));
+    offset = select_idx((ts - *fill)/1000);
     nl = bpf_map_lookup_elem(&tbl_cpu_stats ,&offset);
     if (nl) {
         netdata_update_u64(nl, 1);
@@ -245,6 +379,7 @@ int netdata_return_try_to_wake_up(struct pt_regs* ctx)
 
     return 0;
 }
+*/
 
 /************************************************************************************
  *     
@@ -258,6 +393,71 @@ int netdata_return_try_to_wake_up(struct pt_regs* ctx)
  *     
  ***********************************************************************************/
 
+SEC("tracepoint/block/block_rq_issue")
+int netdata_block_rq_issue(struct netdata_block_rq_issue *ptr)
+{
+    // blkid generates these and we're not interested in them
+    if (!ptr->dev)
+        return 0;
+
+    netdata_disk_key_t key = {};
+    key.dev = ptr->dev;
+    key.sector = ptr->sector;
+
+    if (key.sector < 0)
+        key.sector = 0;
+
+    netdata_disk_value_t value = {};
+    value.timestamp = bpf_ktime_get_ns();
+    value.bytes = ptr->bytes;
+
+    netdata_update_global(NETDATA_KEY_CALLS_BLOCK_RQ_ISSUE);
+
+    bpf_map_update_elem(&tmp_disk_stats, &key, &value, BPF_ANY);
+
+    return 0;
+}
+
+SEC("tracepoint/block/block_rq_complete")
+int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
+{
+    netdata_disk_value_t *fill;
+    netdata_disk_key_t key = {};
+    block_key_t blk;
+    key.dev = ptr->dev;
+    key.sector = ptr->sector;
+
+    if (key.sector < 0)
+        key.sector = 0;
+
+    fill = bpf_map_lookup_elem(&tmp_disk_stats ,&key);
+    if (!fill)
+        return 0;
+
+    // calculate and convert to microsecond
+    u64 data, *update, curr = bpf_ktime_get_ns();
+    curr -= fill->timestamp;
+    curr /= 1000;
+
+    blk.bin = select_idx(curr);
+    blk.dev = new_encode_dev(ptr->dev);
+
+    netdata_update_global(NETDATA_KEY_CALLS_BLOCK_RQ_COMPLETE);
+
+    bpf_map_delete_elem(&tmp_disk_stats, &key);
+
+    update = bpf_map_lookup_elem(&tbl_disk_stats ,&blk);
+    if (update) {
+        netdata_update_u64(update, 1);
+    } else {
+        data = 1;
+        bpf_map_update_elem(&tbl_disk_stats, &blk, &data, BPF_ANY);
+    }
+
+    return 0;
+}
+
+/*
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0))
 SEC("kprobe/blk_start_request")
 int netdata_blk_start_request(struct pt_regs *ctx)
@@ -293,11 +493,10 @@ int netdata_blk_mq_start_request(struct pt_regs *ctx)
 SEC("kprobe/blk_account_io_done")
 int netdata_blk_account_io_completion(struct pt_regs *ctx)
 {
-    //unsigned long rq = PT_REGS_PARM1(ctx);
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     __u64 *fill;
     u64 ts = bpf_ktime_get_ns();
-    __u64 *nl, data;
+    __u64 data;
     block_key_t blk = { };
 
     netdata_update_global(NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE);
@@ -309,15 +508,28 @@ int netdata_blk_account_io_completion(struct pt_regs *ctx)
 
     bpf_map_delete_elem(&tmp_disk_stats, &pid_tgid);
 
-    blk.bin = select_idx((ts - *fill));
+    // There are write request with zero length on sector zero,
+    // which do not seem to be real writes to device.
+//    if (req->__sector == 0 && req->__data_len == 0)
+//        return 0;
 
+    blk.bin = select_idx((ts - *fill)/1000);
+
+    // Resolve disk_name path
     struct request *req = (struct request *)PT_REGS_PARM1(ctx);
     struct gendisk *gd = (struct gendisk *)&req->rq_disk;
-    bpf_probe_read(&blk.disk, sizeof(blk.disk), (void *) gd->disk_name);
+    char *disk_name = (char *)&gd->disk_name;
+    bpf_probe_read(blk.disk, sizeof(blk.disk), disk_name);
+ //   if (req)
+  //  {
+//    blk.disk[0] = 's';
+//    blk.disk[1] = 'd';
+    blk.disk[2] = 'a';
+//    }
 
-    nl = bpf_map_lookup_elem(&tbl_disk_stats ,&blk);
-    if (nl) {
-        netdata_update_u64(nl, 1);
+    fill = bpf_map_lookup_elem(&tbl_disk_stats ,&blk);
+    if (fill) {
+        netdata_update_u64(fill, 1);
     } else {
         data = 1;
         bpf_map_update_elem(&tbl_disk_stats, &blk, &data, BPF_ANY);
@@ -327,6 +539,7 @@ int netdata_blk_account_io_completion(struct pt_regs *ctx)
 
     return 0;
 }
+    */
 
 /************************************************************************************
  *     
