@@ -128,8 +128,6 @@ typedef struct block_key {
 } block_key_t;
 
 struct netdata_latency_pid_stat {
-    // We are not creating histogram per PID, because this would need variables
-    // instead vectors (https://docs.cilium.io/en/v1.9/bpf/), this would become expensive
     __u64 try_to_wake_up_call;
     __u64 blk_start_request_call;
     __u64 io_done;
@@ -142,12 +140,6 @@ enum latency_counters {
     NETDATA_KEY_FINISH_TASK_SWITCH,
     NETDATA_KEY_CALLS_BLOCK_RQ_ISSUE,
     NETDATA_KEY_CALLS_BLOCK_RQ_COMPLETE,
-    /*
-    NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE,
-    NETDATA_KEY_CALLS_BLOCK_START_REQUEST,
-    NETDATA_KEY_CALLS_BLOCK_MQ_START_REQUEST,
-    NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE,
-    */
 
     NETDATA_LATENCY_COUNTER
 };

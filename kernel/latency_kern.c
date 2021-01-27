@@ -204,12 +204,6 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
                 netdata_update_u64(&fill->blk_start_request_call, 1);
                 break;
             }
-                                               /*
-        case NETDATA_KEY_CALLS_BLOCK_MQ_START_REQUEST: {
-                netdata_update_u64(&fill->blk_mq_start_request_call, 1);
-                break;
-            }
-            */
         case NETDATA_KEY_CALLS_BLOCK_RQ_COMPLETE: {
                 netdata_update_u64(&fill->io_done, 1);
                 break;
@@ -219,12 +213,6 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
                 break;
             }
     }
-
-    /*
-    __u32 update_idx = hist_idx + offset;
-    if (update_idx < NETDATA_LENGTH_HIST)
-        netdata_update_u64(&fill->histogram[update_idx], 1);
-        */
 
     if (fill == &data)
         bpf_map_update_elem(&tbl_latency_pid_stats, &pid, fill, BPF_ANY);
@@ -242,28 +230,9 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
  *     
  ***********************************************************************************/
 
-/*
-static void netdata_trace_enqueue(u32 pid, u32 tgid)
-{
-    if (!pid && !tgid)
-        return;
-
-    u64 ts = bpf_ktime_get_ns();
-    bpf_map_update_elem(&tmp_cpu_stats, &pid, &ts, BPF_ANY);
-}
-*/
-
 SEC("kprobe/ttwu_do_wakeup")
 int netdata_ttwu_do_wakeup(struct pt_regs* ctx)
 {
-    /*
-    struct task_struct *ts = (struct task_struct *)PT_REGS_PARM2(ctx);
-    u32 pid, tgid;
-
-    bpf_probe_read(&pid, sizeof(pid), &ts->pid);
-    bpf_probe_read(&tgid, sizeof(tgid), &ts->tgid);
-    */
-
     netdata_update_global(NETDATA_KEY_TRY_TO_WAKE_UP);
 
     u64 pid_tgid = bpf_get_current_pid_tgid();
@@ -278,14 +247,6 @@ int netdata_ttwu_do_wakeup(struct pt_regs* ctx)
 SEC("kprobe/wake_up_new_task")
 int netdata_wake_up_new_task(struct pt_regs* ctx)
 {
-    /*
-    struct task_struct *ts = (struct task_struct *)PT_REGS_PARM1(ctx);
-    u32 pid, tgid;
-
-    bpf_probe_read(&pid, sizeof(pid), &ts->pid);
-    bpf_probe_read(&tgid, sizeof(tgid), &ts->tgid);
-    */
-
     u64 pid_tgid = bpf_get_current_pid_tgid();
     u64 ts = bpf_ktime_get_ns();
 
@@ -313,11 +274,6 @@ int netdata_finish_task_switch(struct pt_regs* ctx)
 
     netdata_update_global(NETDATA_KEY_FINISH_TASK_SWITCH);
 
-    /*
-    if (state == TASK_RUNNING)
-        netdata_trace_enqueue(pid, tgid);
-     */
-
     fill = bpf_map_lookup_elem(&tmp_cpu_stats ,&pid_tgid);
     if (!fill) {
         return 0;
@@ -335,51 +291,6 @@ int netdata_finish_task_switch(struct pt_regs* ctx)
 
     return 0;
 }
-
-/*
-SEC("kprobe/try_to_wake_up")
-int netdata_enter_try_to_wake_up(struct pt_regs* ctx)
-{
-    u64 ts = bpf_ktime_get_ns();
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-
-    bpf_map_update_elem(&tmp_cpu_stats, &pid_tgid, &ts, BPF_ANY);
-
-    netdata_update_global(NETDATA_KEY_TRY_TO_WAKE_UP);
-
-    return 0;
-}
-
-SEC("kretprobe/try_to_wake_up")
-int netdata_return_try_to_wake_up(struct pt_regs* ctx)
-{
-    u64 ts = bpf_ktime_get_ns();
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    __u64 *fill;
-    __u64 *nl, data;
-    __u32 offset;
-
-    fill = bpf_map_lookup_elem(&tmp_cpu_stats ,&pid_tgid);
-    if (!fill) {
-        return 0;
-    }
-
-    bpf_map_delete_elem(&tmp_cpu_stats, &pid_tgid);
-
-    offset = select_idx((ts - *fill)/1000);
-    nl = bpf_map_lookup_elem(&tbl_cpu_stats ,&offset);
-    if (nl) {
-        netdata_update_u64(nl, 1);
-    } else {
-        data = 1;
-        bpf_map_update_elem(&tbl_cpu_stats, &offset, &data, BPF_ANY);
-    }
-
-    netdata_update_pid(pid_tgid, NETDATA_KEY_TRY_TO_WAKE_UP, offset);
-
-    return 0;
-}
-*/
 
 /************************************************************************************
  *     
@@ -456,90 +367,6 @@ int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
 
     return 0;
 }
-
-/*
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0))
-SEC("kprobe/blk_start_request")
-int netdata_blk_start_request(struct pt_regs *ctx)
-{
-    __u64 ct = bpf_ktime_get_ns();
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-
-    bpf_map_update_elem(&tmp_disk_stats, &pid_tgid, &ct, BPF_ANY);
-
-    netdata_update_global(NETDATA_KEY_CALLS_BLOCK_START_REQUEST);
-
-    netdata_update_pid(pid_tgid, NETDATA_KEY_CALLS_BLOCK_START_REQUEST, 0);
-
-    return 0;
-}
-#endif
-
-SEC("kprobe/blk_mq_start_request")
-int netdata_blk_mq_start_request(struct pt_regs *ctx)
-{
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    __u64 ct = bpf_ktime_get_ns();
-
-    bpf_map_update_elem(&tmp_disk_stats, &pid_tgid, &ct, BPF_ANY);
-    
-    netdata_update_global(NETDATA_KEY_CALLS_BLOCK_MQ_START_REQUEST);
-
-    netdata_update_pid(pid_tgid, NETDATA_KEY_CALLS_BLOCK_MQ_START_REQUEST, 0);
-
-    return 0;
-}
-
-SEC("kprobe/blk_account_io_done")
-int netdata_blk_account_io_completion(struct pt_regs *ctx)
-{
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    __u64 *fill;
-    u64 ts = bpf_ktime_get_ns();
-    __u64 data;
-    block_key_t blk = { };
-
-    netdata_update_global(NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE);
-
-    fill = bpf_map_lookup_elem(&tmp_disk_stats ,&pid_tgid);
-    if (!fill) {
-        return 0;
-    }
-
-    bpf_map_delete_elem(&tmp_disk_stats, &pid_tgid);
-
-    // There are write request with zero length on sector zero,
-    // which do not seem to be real writes to device.
-//    if (req->__sector == 0 && req->__data_len == 0)
-//        return 0;
-
-    blk.bin = select_idx((ts - *fill)/1000);
-
-    // Resolve disk_name path
-    struct request *req = (struct request *)PT_REGS_PARM1(ctx);
-    struct gendisk *gd = (struct gendisk *)&req->rq_disk;
-    char *disk_name = (char *)&gd->disk_name;
-    bpf_probe_read(blk.disk, sizeof(blk.disk), disk_name);
- //   if (req)
-  //  {
-//    blk.disk[0] = 's';
-//    blk.disk[1] = 'd';
-    blk.disk[2] = 'a';
-//    }
-
-    fill = bpf_map_lookup_elem(&tbl_disk_stats ,&blk);
-    if (fill) {
-        netdata_update_u64(fill, 1);
-    } else {
-        data = 1;
-        bpf_map_update_elem(&tbl_disk_stats, &blk, &data, BPF_ANY);
-    }
-
-    netdata_update_pid(pid_tgid, NETDATA_KEY_CALLS_BLOCK_ACCOUNT_IO_DONE, blk.bin);
-
-    return 0;
-}
-    */
 
 /************************************************************************************
  *     
