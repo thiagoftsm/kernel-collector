@@ -57,7 +57,7 @@ struct bpf_map_def SEC("maps") tbl_cpu_stats = {
 };
 
 //Hardware
-struct bpf_map_def SEC("maps") tbl_disk_stats = {
+struct bpf_map_def SEC("maps") tbl_disk_rstats = {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))
     .type = BPF_MAP_TYPE_HASH,
 #else
@@ -69,7 +69,7 @@ struct bpf_map_def SEC("maps") tbl_disk_stats = {
 };
 
 //Global
-struct bpf_map_def SEC("maps")  tbl_latency_pid_stats = {
+struct bpf_map_def SEC("maps") tbl_latency_pid = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(__u32),
     .value_size = sizeof(struct netdata_latency_pid_stat),
@@ -194,7 +194,7 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
     struct netdata_latency_pid_stat *fill, data ={ };
 
     __u32 pid = (__u32)(pid_tgid >> 32);
-    fill = bpf_map_lookup_elem(&tbl_latency_pid_stats, &pid);
+    fill = bpf_map_lookup_elem(&tbl_latency_pid, &pid);
     if (!fill) {
         fill = &data;
     } 
@@ -215,7 +215,7 @@ static inline void netdata_update_pid(__u64 pid_tgid, __u32 hist_idx, __u32 offs
     }
 
     if (fill == &data)
-        bpf_map_update_elem(&tbl_latency_pid_stats, &pid, fill, BPF_ANY);
+        bpf_map_update_elem(&tbl_latency_pid, &pid, fill, BPF_ANY);
 }
 
 /************************************************************************************
@@ -357,12 +357,12 @@ int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
 
     bpf_map_delete_elem(&tmp_disk_stats, &key);
 
-    update = bpf_map_lookup_elem(&tbl_disk_stats ,&blk);
+    update = bpf_map_lookup_elem(&tbl_disk_rstats ,&blk);
     if (update) {
         netdata_update_u64(update, 1);
     } else {
         data = 1;
-        bpf_map_update_elem(&tbl_disk_stats, &blk, &data, BPF_ANY);
+        bpf_map_update_elem(&tbl_disk_rstats, &blk, &data, BPF_ANY);
     }
 
     return 0;
