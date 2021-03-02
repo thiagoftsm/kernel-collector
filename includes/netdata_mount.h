@@ -9,7 +9,7 @@ enum mount_counters {
     NETDATA_KEY_UMOUNT_CALL,
     NETDATA_KEY_UMOUNT_ERROR,
 
-    NETDATA_SYNC_END
+    NETDATA_MOUNT_END
 };
 
 #endif /* _NETDATA_MOUNT_H_ */
