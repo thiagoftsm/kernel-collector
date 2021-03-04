@@ -18,8 +18,8 @@ struct bpf_map_def SEC("maps") tbl_ext4 = {
 #else
     .type = BPF_MAP_TYPE_PERCPU_HASH,
 #endif
-    .key_size = sizeof(u32),
-    .value_size = sizeof(u64),
+    .key_size = sizeof(netdata_ext4_hist_t),
+    .value_size = sizeof(__u64),
     .max_entries = 8192
 };
 
@@ -29,8 +29,8 @@ struct bpf_map_def SEC("maps") tmp_ext4 = {
 #else
     .type = BPF_MAP_TYPE_PERCPU_HASH,
 #endif
-    .key_size = sizeof(u32),
-    .value_size = sizeof(u64),
+    .key_size = sizeof(__u32),
+    .value_size = sizeof(__u64),
     .max_entries = 8192
 };
 
@@ -58,7 +58,7 @@ static unsigned int log2(unsigned int v)
     return r;
 }
 
-static unsigned int log2l(u64 v)
+static unsigned int log2l(__u64 v)
 {
     unsigned int hi = v >> 32;
     if (hi)
@@ -75,9 +75,9 @@ static unsigned int log2l(u64 v)
  *  The algorithm was based in the link
  *  http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html
  */
-static inline u32 select_idx(u64 val)
+static inline __u32 select_idx(__u64 val)
 {
-    u32 rlog;
+    __u32 rlog;
 
     rlog = log2l(val);
 
@@ -87,7 +87,7 @@ static inline u32 select_idx(u64 val)
     return rlog;
 }
 
-static inline void netdata_update_u64(u64 *res, u64 value)
+static inline void netdata_update_u64(__u64 *res, __u64 value)
 {
     __sync_fetch_and_add(res, value);
     if ( (0xFFFFFFFFFFFFFFFF - *res) <= value) {
@@ -102,11 +102,11 @@ static inline void netdata_update_u64(u64 *res, u64 value)
  *     
  ***********************************************************************************/
 
-static inline int netdata_ext4_entry(struct pt_regs *ctx)
+static int netdata_ext4_entry(struct pt_regs *ctx)
 {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    u32 pid = (u32)(pid_tgid >> 32);
-    u64 ts = bpf_ktime_get_ns();
+    __u64 pid_tgid = bpf_get_current_pid_tgid();
+    __u32 pid = (__u32)(pid_tgid >> 32);
+    __u64 ts = bpf_ktime_get_ns();
 
     bpf_map_update_elem(&tmp_ext4, &pid, &ts, BPF_ANY);
 
@@ -131,11 +131,13 @@ int netdata_ext4_file_open(struct pt_regs *ctx)
     return netdata_ext4_entry(ctx);
 }
 
+/*
 SEC("kprobe/ext4_sync_file")
 int netdata_ext4_sync_file(struct pt_regs *ctx) 
 {
     return netdata_ext4_entry(ctx);
 }
+*/
 
 /************************************************************************************
  *     
@@ -143,11 +145,11 @@ int netdata_ext4_sync_file(struct pt_regs *ctx)
  *     
  ***********************************************************************************/
 
-static inline int netdata_ext4_end(struct pt_regs *ctx, u32 selection)
+static int netdata_ext4_end(struct pt_regs *ctx, __u32 selection)
 {
-    u64 *fill, data;
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    u32 pid = (u32)(pid_tgid >> 32);
+    __u64 *fill, data;
+    __u64 pid_tgid = bpf_get_current_pid_tgid();
+    __u32 pid = (__u32)(pid_tgid >> 32);
     netdata_ext4_hist_t blk;
 
     fill = bpf_map_lookup_elem(&tmp_ext4 ,&pid);
@@ -196,11 +198,13 @@ int netdata_ret_ext4_file_open(struct pt_regs *ctx)
     return netdata_ext4_end(ctx, NETDATA_KEY_CALLS_OPEN);
 }
 
+/*
 SEC("kretprobe/ext4_sync_file")
-int netdata_ret_ext4_sync_file(struct pt_regs *ctx)
+int netdata_ret_ext4_sync_file(struct pt_regs *ctx) 
 {
     return netdata_ext4_end(ctx, NETDATA_KEY_CALLS_SYNC);
 }
+*/
 
 char _license[] SEC("license") = "GPL";
 
