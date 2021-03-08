@@ -131,13 +131,11 @@ int netdata_ext4_file_open(struct pt_regs *ctx)
     return netdata_ext4_entry(ctx);
 }
 
-/*
 SEC("kprobe/ext4_sync_file")
 int netdata_ext4_sync_file(struct pt_regs *ctx) 
 {
     return netdata_ext4_entry(ctx);
 }
-*/
 
 /************************************************************************************
  *     
@@ -180,7 +178,7 @@ static int netdata_ext4_end(struct pt_regs *ctx, __u32 selection)
     return 0;
 }
 
-SEC("kretprobe/ext4_sync_file")
+SEC("kretprobe/ext4_file_read_iter")
 int netdata_ret_ext4_ext4_file_read_iter(struct pt_regs *ctx)
 {
     return netdata_ext4_end(ctx, NETDATA_KEY_CALLS_READ);
@@ -198,13 +196,11 @@ int netdata_ret_ext4_file_open(struct pt_regs *ctx)
     return netdata_ext4_end(ctx, NETDATA_KEY_CALLS_OPEN);
 }
 
-/*
 SEC("kretprobe/ext4_sync_file")
 int netdata_ret_ext4_sync_file(struct pt_regs *ctx) 
 {
     return netdata_ext4_end(ctx, NETDATA_KEY_CALLS_SYNC);
 }
-*/
 
 char _license[] SEC("license") = "GPL";
 
