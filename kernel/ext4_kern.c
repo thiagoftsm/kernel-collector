@@ -18,7 +18,7 @@ struct bpf_map_def SEC("maps") tbl_ext4 = {
 #else
     .type = BPF_MAP_TYPE_PERCPU_HASH,
 #endif
-    .key_size = sizeof(netdata_ext4_hist_t),
+    .key_size = sizeof(netdata_fs_hist_t),
     .value_size = sizeof(__u64),
     .max_entries = 8192
 };
@@ -81,8 +81,8 @@ static inline __u32 select_idx(__u64 val)
 
     rlog = log2l(val);
 
-    if (rlog > NETDATA_EXT4_MAX_BINS_POS)
-        rlog = NETDATA_EXT4_MAX_BINS_POS;
+    if (rlog > NETDATA_FS_MAX_BINS_POS)
+        rlog = NETDATA_FS_MAX_BINS_POS;
 
     return rlog;
 }
@@ -148,7 +148,7 @@ static int netdata_ext4_end(struct pt_regs *ctx, __u32 selection)
     __u64 *fill, data;
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     __u32 pid = (__u32)(pid_tgid >> 32);
-    netdata_ext4_hist_t blk;
+    netdata_fs_hist_t blk;
 
     fill = bpf_map_lookup_elem(&tmp_ext4 ,&pid);
     if (!fill)
