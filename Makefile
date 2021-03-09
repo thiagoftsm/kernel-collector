@@ -25,6 +25,10 @@ all: $(KERNEL_PROGRAM)
 	cp $(KERNEL_DIR)pcachestat_kern.o pnetdata_ebpf_cachestat.$(VER_MAJOR).$(VER_MINOR).o
 	cp $(KERNEL_DIR)rext4_kern.o rnetdata_ebpf_ext4.$(VER_MAJOR).$(VER_MINOR).o
 	cp $(KERNEL_DIR)pext4_kern.o pnetdata_ebpf_ext4.$(VER_MAJOR).$(VER_MINOR).o
+	cp $(KERNEL_DIR)rxfs_kern.o rnetdata_ebpf_xfs.$(VER_MAJOR).$(VER_MINOR).o
+	cp $(KERNEL_DIR)pxfs_kern.o pnetdata_ebpf_xfs.$(VER_MAJOR).$(VER_MINOR).o
+	cp $(KERNEL_DIR)rnfs_kern.o rnetdata_ebpf_nfs.$(VER_MAJOR).$(VER_MINOR).o
+	cp $(KERNEL_DIR)pnfs_kern.o pnetdata_ebpf_nfs.$(VER_MAJOR).$(VER_MINOR).o
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ]; then tar -cf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar [pr]netdata_ebpf_*.$(VER_MAJOR).$(VER_MINOR).o; else echo "ERROR: Cannot find BPF programs"; exit 1; fi
 	if [ "$${DEBUG:-0}" -eq 1 ]; then tar -uvf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar tools/check-kernel-config.sh; fi
 	xz artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar
