@@ -40,3 +40,5 @@ cp "${KERNEL_DIR}rsyncfs_kern.o" "rnetdata_ebpf_syncfs.${VER_MAJOR}.${VER_MINOR}
 cp "${KERNEL_DIR}psyncfs_kern.o" "pnetdata_ebpf_syncfs.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}rswap_kern.o" "rnetdata_ebpf_swap.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}pswap_kern.o" "pnetdata_ebpf_swap.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}rxfs_kern.o" "rnetdata_ebpf_xfs.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}pxfs_kern.o" "pnetdata_ebpf_xfs.${VER_MAJOR}.${VER_MINOR}.o"
