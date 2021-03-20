@@ -75,7 +75,17 @@ int netdata_btrfs_sync_file(struct pt_regs *ctx)
 SEC("kprobe/generic_file_read_iter")
 int netdata_generic_file_read_iter(struct pt_regs *ctx) 
 {
-    return 0;
+    __u32 key = 0;
+    __u64 *bfo = bpf_map_lookup_elem(&tbl_btrfs_ext ,&key);
+    if (!bfo)
+        return 0;
+
+    struct file *ptr = (struct file *)PT_REGS_PARM2(ctx);
+    struct file_operations *fo = _(ptr->f_op);
+    if ((u64)fo != *bfo)
+        return 0;
+
+    return netdata_btrfs_entry(ctx);
 }
 
 SEC("kprobe/generic_file_open")
@@ -151,6 +161,12 @@ SEC("kretprobe/btrfs_sync_file")
 int netdata_ret_btrfs_sync_file(struct pt_regs *ctx) 
 {
     return netdata_btrfs_end(ctx, NETDATA_KEY_CALLS_SYNC);
+}
+
+SEC("kretprobe/generic_file_read_iter")
+int netdata_ret_generic_file_read_iter(struct pt_regs *ctx) 
+{
+    return netdata_btrfs_end(ctx, NETDATA_KEY_CALLS_READ);
 }
 
 char _license[] SEC("license") = "GPL";
