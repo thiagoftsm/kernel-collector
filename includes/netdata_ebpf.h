@@ -6,6 +6,7 @@
 #include <linux/sched.h>
 #include <linux/version.h>
 
+#include "netdata_dc.h"
 #include "netdata_cache.h"
 #include "netdata_dc.h"
 #include "netdata_fs.h"

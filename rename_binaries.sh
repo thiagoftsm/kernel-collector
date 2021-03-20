@@ -10,6 +10,10 @@ fi
 VER_MAJOR="$1"
 VER_MINOR="$2"
 
+cp "${KERNEL_DIR}rdc_kern.o" "rnetdata_ebpf_dc.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}pdc_kern.o" "pnetdata_ebpf_dc.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}rbtrfs_kern.o" "rnetdata_ebpf_btrfs.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}pbtrfs_kern.o" "pnetdata_ebpf_btrfs.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}rext4_kern.o" "rnetdata_ebpf_ext4.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}pext4_kern.o" "pnetdata_ebpf_ext4.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}rprocess_kern.o" "rnetdata_ebpf_process.${VER_MAJOR}.${VER_MINOR}.o"
