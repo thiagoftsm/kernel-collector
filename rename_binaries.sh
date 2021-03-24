@@ -16,6 +16,8 @@ cp "${KERNEL_DIR}rbtrfs_kern.o" "rnetdata_ebpf_btrfs.${VER_MAJOR}.${VER_MINOR}.o
 cp "${KERNEL_DIR}pbtrfs_kern.o" "pnetdata_ebpf_btrfs.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}rext4_kern.o" "rnetdata_ebpf_ext4.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}pext4_kern.o" "pnetdata_ebpf_ext4.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}rmd_kern.o" "rnetdata_ebpf_md.${VER_MAJOR}.${VER_MINOR}.o"
+cp "${KERNEL_DIR}pmd_kern.o" "pnetdata_ebpf_md.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}rprocess_kern.o" "rnetdata_ebpf_process.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}pprocess_kern.o" "pnetdata_ebpf_process.${VER_MAJOR}.${VER_MINOR}.o"
 cp "${KERNEL_DIR}rnetwork_viewer_kern.o" "rnetdata_ebpf_socket.${VER_MAJOR}.${VER_MINOR}.o"

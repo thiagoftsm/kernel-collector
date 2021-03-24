@@ -24,10 +24,10 @@ struct bpf_map_def SEC("maps") tbl_sync = {
  *
  ***********************************************************************************/
 
-SEC("kprobe/" NETDATA_SYSCALL(sync))
-int netdata_syscall_sync(struct pt_regs* ctx)
+SEC("kprobe/md_flush_request")
+int netdata_md_flush_request(struct pt_regs* ctx)
 {
-    libnetdata_update_global(&tbl_sync, NETDATA_KEY_SYNC_CALL, 1);
+    libnetdata_update_global(&tbl_sync, NETDATA_KEY_MD_CALL, 1);
 
     return 0;
 }
@@ -39,3 +39,4 @@ int netdata_syscall_sync(struct pt_regs* ctx)
  ***********************************************************************************/
 
 char _license[] SEC("license") = "GPL";
+
