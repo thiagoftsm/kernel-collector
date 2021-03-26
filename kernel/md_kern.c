@@ -15,7 +15,7 @@ struct bpf_map_def SEC("maps") tbl_sync = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u64),
-    .max_entries = NETDATA_SYNC_END
+    .max_entries = NETDATA_MD_END
 };
 
 /************************************************************************************
