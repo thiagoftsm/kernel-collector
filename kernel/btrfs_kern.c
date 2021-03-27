@@ -80,8 +80,9 @@ int netdata_generic_file_read_iter(struct pt_regs *ctx)
     if (!bfo)
         return 0;
 
-    struct file *ptr = (struct file *)PT_REGS_PARM2(ctx);
-    struct file_operations *fo = _(ptr->f_op);
+    struct kiocb *ptr = (struct kiocb *)PT_REGS_PARM1(ctx);
+    struct file *kf = _(ptr->ki_filp);
+    struct file_operations *fo = _(kf->f_op);
     if ((u64)fo != *bfo)
         return 0;
 
