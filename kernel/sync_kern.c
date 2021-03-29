@@ -1,4 +1,4 @@
-#define KBUILD_MODNAME "latency_tp_netdata"
+#define KBUILD_MODNAME "sync_netdata"
 #include <linux/bpf.h>
 #include <linux/ptrace.h>
 
