@@ -47,6 +47,7 @@ process_kern.o: process_kern.c
 sync_kern.o: sync_kern.c
 sync_file_range_kern.o: sync_file_range_kern.c
 syncfs_kern.o: syncfs_kern.c
+swap_kern.o: swap_kern.c
 ext4_kern.o: ext4_kern.c
 nfs_kern.o: nfs_kern.c
 swap_kern.o: swap_kern.c

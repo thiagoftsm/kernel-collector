@@ -17,3 +17,4 @@ enum swap_counters {
 };
 
 #endif /* _NETDATA_SWAP_H_ */
+
