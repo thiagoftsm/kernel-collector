@@ -31,17 +31,6 @@ struct bpf_map_def SEC("maps") tbl_pid_swap = {
     .max_entries = PID_MAX_DEFAULT
 };
 
-struct bpf_map_def SEC("maps") tbl_pid_swap = {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)) 
-    .type = BPF_MAP_TYPE_HASH,
-#else
-    .type = BPF_MAP_TYPE_PERCPU_HASH,
-#endif
-    .key_size = sizeof(__u32),
-    .value_size = sizeof(netdata_swap_access_t),
-    .max_entries = 100000
-};
-
 /************************************************************************************
  *
  *                               SYNC SECTION
