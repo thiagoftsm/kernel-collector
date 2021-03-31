@@ -6,6 +6,8 @@ KERNEL_PROGRAM = $(KERNEL_DIR)process_kern.o
 KERNEL_VERSION="$(shell if [ -f /usr/src/linux/include/config/kernel.release ]; then cat /usr/src/linux/include/config/kernel.release; else cat /proc/sys/kernel/osrelease; fi)"
 FIRST_KERNEL_VERSION=$(shell sh tools/complement.sh "$(KERNEL_VERSION)")
 
+LIBBPF_DIR="$(abspath ./libbpf/src/)"
+
 NETDATA_KERNEL_VERSION=$(shell echo $(KERNEL_VERSION) | tr -s "." "_")
 
 VER_MAJOR=$(shell echo $(KERNEL_VERSION) | cut -d. -f1)
@@ -16,7 +18,14 @@ _LIBC ?= glibc
 
 EXTRA_CFLAGS += -fno-stack-protector
 
-all: $(KERNEL_PROGRAM)
+all: binaries
+
+# Build libbpf
+libbpf.a:
+	cd $(LIBBPF_DIR) && $(MAKE) -C . BUILD_STATIC_ONLY=1
+	cp $(LIBBPF_DIR)/libbpf.a $(KERNEL_DIR)
+
+binaries: libbpf.a $(KERNEL_PROGRAM)
 	sh rename_binaries.sh "$(VER_MAJOR)" "$(VER_MINOR)"
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ]; then tar -cf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar [pr]netdata_ebpf_*.$(VER_MAJOR).$(VER_MINOR).o; else echo "ERROR: Cannot find BPF programs"; exit 1; fi
 	if [ "$${DEBUG:-0}" -eq 1 ]; then tar -uvf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar tools/check-kernel-config.sh; fi
@@ -29,6 +38,7 @@ $(KERNEL_PROGRAM):
 clean:
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ] ; then rm *.o; fi
 	cd $(KERNEL_DIR) && $(MAKE) clean;
+	cd $(LIBBPF_DIR) && $(MAKE) clean
 	rm artifacts/*
 
 install:
