@@ -17,11 +17,11 @@ struct {
         __uint(max_entries, NETDATA_SYNC_END);
         __type(key, u32);
         __type(value, u64);
-} tbl_sync SEC(".maps");
+} tbl_syncfr SEC(".maps");
 
 /************************************************************************************
  *
- *                               SYNC SECTION
+ *                               SYNC_FILE_RANGE SECTION
  *
  ***********************************************************************************/
 
@@ -32,18 +32,16 @@ SEC("kprobe/__s390x_sys_sync")
 #else
 SEC("kprobe/__sys_sync")
 #endif
-int BPF_KPROBE(netdata_syscall_sync)
+int BPF_KPROBE(netdata_syscall_sync_file_range)
 {
-    libnetdata_update_global(&tbl_sync, NETDATA_KEY_SYNC_CALL, 1);
+    libnetdata_update_global(&tbl_syncfr, NETDATA_KEY_SYNC_CALL, 1);
 
     return 0;
 }
 
 /************************************************************************************
  *
- *                             END SYNC SECTION
+ *                             END SYNC_FILE_RANGE SECTION
  *
  ***********************************************************************************/
-
-char _license[] SEC("license") = "GPL";
 

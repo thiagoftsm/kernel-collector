@@ -17,13 +17,14 @@ struct {
         __uint(max_entries, NETDATA_SYNC_END);
         __type(key, u32);
         __type(value, u64);
-} tbl_sync SEC(".maps");
+} tbl_msync SEC(".maps");
 
 /************************************************************************************
  *
- *                               SYNC SECTION
+ *                               MSYNC SECTION
  *
  ***********************************************************************************/
+
 
 #ifdef __x86_64__
 SEC("kprobe/__x64_sys_sync")
@@ -34,16 +35,14 @@ SEC("kprobe/__sys_sync")
 #endif
 int BPF_KPROBE(netdata_syscall_sync)
 {
-    libnetdata_update_global(&tbl_sync, NETDATA_KEY_SYNC_CALL, 1);
+    libnetdata_update_global(&tbl_msync, NETDATA_KEY_SYNC_CALL, 1);
 
     return 0;
 }
 
 /************************************************************************************
  *
- *                             END SYNC SECTION
+ *                             END MSYNC SECTION
  *
  ***********************************************************************************/
-
-char _license[] SEC("license") = "GPL";
 
