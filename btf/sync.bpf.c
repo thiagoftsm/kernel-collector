@@ -4,12 +4,8 @@
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_core_read.h>
 
-enum sync_counters {
-    NETDATA_KEY_SYNC_CALL,
-
-    // Keep this as last and don't skip numbers as it is used as element counter
-    NETDATA_SYNC_END
-};
+#include "netdata_sync.h"
+//#include "libnetdata_ebpf.h"
 
 // Use __always_inline instead inline to keep compatiblity with old kernels
 // https://docs.cilium.io/en/v1.8/bpf/
@@ -25,7 +21,7 @@ static __always_inline void libnetdata_update_u64(u64 *res, u64 value)
 
 static __always_inline void libnetdata_update_global(void *tbl,u32 key, u64 value)
 {
-    __u64 *res;
+    u64 *res;
     res = bpf_map_lookup_elem(tbl, &key);
     if (res)
         libnetdata_update_u64(res, value) ;

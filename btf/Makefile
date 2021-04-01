@@ -3,7 +3,7 @@ CLANG ?= clang
 BPFTOOL ?= bpftool
 LLVM_STRIP ?= llvm-strip
 
-INCLUDES := -Ikernel/ -Ibpf/ -I../libbpf/include/uapi
+INCLUDES := -Ikernel/ -Ibpf/ -I../libbpf/include/uapi -I../includes/
 CFLAGS := -g -Wall
 
 CLANG_BPF_SYS_INCLUDES = $(shell $(CLANG) -v -E - </dev/null 2>&1 \
@@ -17,8 +17,7 @@ sync.bpf.o: sync.bpf.c
 sync.skel.h: sync.bpf.o
 
 clean:
-	#rm -rf *.a bpf/ pkgconfig/ *.o
-	rm -rf *.o *.h
+	rm -rf *.a bpf/ pkgconfig/ *.o *.h
 
 %.bpf.o: %.bpf.c
 	$(call msg,BPF,$@)

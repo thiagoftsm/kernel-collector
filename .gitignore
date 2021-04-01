@@ -9,3 +9,6 @@
 *.o*
 
 *.a
+
+btf/bpf/*
+btf/pkgconfig/*
