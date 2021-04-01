@@ -1,6 +1,7 @@
 CC=gcc
 
 KERNEL_DIR = kernel/
+BTF_DIR = btf/
 KERNEL_PROGRAM = $(KERNEL_DIR)process_kern.o
 
 KERNEL_VERSION="$(shell if [ -f /usr/src/linux/include/config/kernel.release ]; then cat /usr/src/linux/include/config/kernel.release; else cat /proc/sys/kernel/osrelease; fi)"
@@ -22,8 +23,7 @@ all: binaries
 
 # Build libbpf
 libbpf.a:
-	cd $(LIBBPF_DIR) && $(MAKE) -C . BUILD_STATIC_ONLY=1
-	cp $(LIBBPF_DIR)/libbpf.a $(KERNEL_DIR)
+	cd $(LIBBPF_DIR) && $(MAKE) -C . BUILD_STATIC_ONLY=1 DESTDIR=../../$(BTF_DIR) INCLUDEDIR= LIBDIR= UAPIDIR= install
 
 binaries: libbpf.a $(KERNEL_PROGRAM)
 	sh rename_binaries.sh "$(VER_MAJOR)" "$(VER_MINOR)"
@@ -39,6 +39,7 @@ clean:
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ] ; then rm *.o; fi
 	cd $(KERNEL_DIR) && $(MAKE) clean;
 	cd $(LIBBPF_DIR) && $(MAKE) clean
+	cd $(BTF_DIR) && $(MAKE) clean
 	rm artifacts/*
 
 install:

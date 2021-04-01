@@ -90,4 +90,4 @@ all: process_kern.o network_viewer_kern.o cachestat_kern.o sync_kern.o syncfs_ke
 	$(LLC) -march=bpf -filetype=obj -o p$@ $(<:.c=.ll)
 
 clean:
-	rm *.o *.ll *.a
+	rm *.o *.ll
