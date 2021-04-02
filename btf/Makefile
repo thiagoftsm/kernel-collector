@@ -36,7 +36,7 @@ clean:
 %.skel.h: %.bpf.o 
 	$(BPFTOOL) gen skeleton $< > $@
 
-binaries: sync.skel.h fdatasync.skel.h sync_file_range.skel.h syncfs.skel.h fdatasync.skel.h msync.skel.h #cachestat.skel.h
+binaries: sync.skel.h fdatasync.skel.h sync_file_range.skel.h syncfs.skel.h fdatasync.skel.h msync.skel.h cachestat.skel.h
 
 # delete failed targets
 .DELETE_ON_ERROR:

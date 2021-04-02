@@ -1,11 +1,4 @@
-#include "kernel/vmlinux_5_10.h"
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-#include <bpf/bpf_core_read.h>
-
-/*
 #include "libnetdata_ebpf.h"
-*/
 #include "netdata_cache.h"
 
 /************************************************************************************
@@ -37,7 +30,6 @@ struct {
 SEC("kprobe/add_to_page_cache_lru")
 int BPF_KPROBE(netdata_add_to_page_cache_lru)
 {
-    /*
     netdata_cachestat_t *fill, data = {};
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_ADD_TO_PAGE_CACHE_LRU, 1);
 
@@ -50,7 +42,6 @@ int BPF_KPROBE(netdata_add_to_page_cache_lru)
         data.add_to_page_cache_lru = 1;
         bpf_map_update_elem(&cstat_pid, &pid, &data, BPF_ANY);
     }
-    */
 
     return 0;
 }
@@ -58,7 +49,6 @@ int BPF_KPROBE(netdata_add_to_page_cache_lru)
 SEC("kprobe/mark_page_accessed")
 int BPF_KPROBE(netdata_mark_page_accessed)
 {
-    /*
     netdata_cachestat_t *fill, data = {};
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_MARK_PAGE_ACCESSED, 1);
 
@@ -71,12 +61,10 @@ int BPF_KPROBE(netdata_mark_page_accessed)
         data.mark_page_accessed = 1;
         bpf_map_update_elem(&cstat_pid, &pid, &data, BPF_ANY);
     }
-    */
 
     return 0;
 }
 
-    /*
 SEC("kprobe/account_page_dirtied")
 int BPF_KPROBE(netdata_account_page_dirtied)
 {
@@ -95,9 +83,7 @@ int BPF_KPROBE(netdata_account_page_dirtied)
 
     return 0;
 }
-    */
 
-    /*
 SEC("kprobe/mark_buffer_dirty")
 int BPF_KPROBE(netdata_mark_buffer_dirty)
 {
@@ -116,7 +102,6 @@ int BPF_KPROBE(netdata_mark_buffer_dirty)
 
     return 0;
 }
-    */
 
 char _license[] SEC("license") = "GPL";
 
