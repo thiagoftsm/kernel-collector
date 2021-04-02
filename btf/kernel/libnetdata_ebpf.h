@@ -2,6 +2,9 @@
 #define _LIBNETDATA_EBPF_ 1
 
 #include "vmlinux_5_10.h"
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
+#include <bpf/bpf_core_read.h>
 
 #ifdef __x86_64__
 #define NETDATA_SYSCALL(SYS) "__x64_sys_"

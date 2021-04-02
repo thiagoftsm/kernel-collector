@@ -1,10 +1,5 @@
-#include "kernel/vmlinux_5_10.h"
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-#include <bpf/bpf_core_read.h>
-
-#include "netdata_sync.h"
 #include "libnetdata_ebpf.h"
+#include "netdata_sync.h"
 
 /************************************************************************************
  *     
