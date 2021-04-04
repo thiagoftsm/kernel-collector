@@ -10,5 +10,7 @@
 
 *.a
 
+*.skel.h
+
 btf/bpf/*
 btf/pkgconfig/*

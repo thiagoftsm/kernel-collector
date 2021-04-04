@@ -28,7 +28,7 @@ struct {
  ***********************************************************************************/
 
 SEC("kprobe/lookup_fast")
-int netdata_lookup_fast(struct pt_regs* ctx)
+int BPF_KPROBE(netdata_lookup_fast)
 {
     netdata_dc_stat_t *fill, data = {};
     libnetdata_update_global(&dcstat_global, NETDATA_KEY_DC_REFERENCE, 1);
@@ -47,12 +47,10 @@ int netdata_lookup_fast(struct pt_regs* ctx)
 }
 
 SEC("kretprobe/d_lookup")
-int netdata_d_lookup(struct pt_regs* ctx)
+int BPF_KPROBE(netdata_d_lookup, int ret)
 {
     netdata_dc_stat_t *fill, data = {};
     libnetdata_update_global(&dcstat_global, NETDATA_KEY_DC_SLOW, 1);
-
-    int ret = PT_REGS_RC(ctx);
 
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     __u32 pid = (__u32)(pid_tgid >> 32);
