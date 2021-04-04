@@ -8,10 +8,10 @@
  ***********************************************************************************/
 
 struct {
-        __uint(type, BPF_MAP_TYPE_HASH);
-        __uint(max_entries, NETDATA_SYNC_END);
-        __type(key, u32);
-        __type(value, u64);
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, NETDATA_SYNC_END);
+    __type(key, u32);
+    __type(value, u64);
 } tbl_syncfs SEC(".maps");
 
 /************************************************************************************
@@ -20,13 +20,7 @@ struct {
  *
  ***********************************************************************************/
 
-#ifdef __x86_64__
-SEC("kprobe/__x64_sys_syncfs")
-#elif defined(__s390x__)
-SEC("kprobe/__s390x_sys_syncfs")
-#else
-SEC("kprobe/__sys_syncfs")
-#endif
+SEC("kprobe/" NETDATA_SYSCALL(syncfs))
 int BPF_KPROBE(netdata_syscall_sync)
 {
     libnetdata_update_global(&tbl_syncfs, NETDATA_KEY_SYNC_CALL, 1);

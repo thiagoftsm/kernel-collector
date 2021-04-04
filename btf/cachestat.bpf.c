@@ -8,17 +8,17 @@
  ***********************************************************************************/
 
 struct {
-        __uint(type, BPF_MAP_TYPE_HASH);
-        __uint(max_entries, NETDATA_CACHESTAT_END);
-        __type(key, u32);
-        __type(value, u64);
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, NETDATA_CACHESTAT_END);
+    __type(key, u32);
+    __type(value, u64);
 } cstat_global SEC(".maps");
 
 struct {
-        __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
-        __uint(max_entries, 100000);
-        __type(key, u32);
-        __type(value, netdata_cachestat_t);
+    __uint(type, BPF_MAP_TYPE_PERCPU_HASH);
+    __uint(max_entries, 100000);
+    __type(key, u32);
+    __type(value, netdata_cachestat_t);
 } cstat_pid SEC(".maps");
 
 /************************************************************************************
