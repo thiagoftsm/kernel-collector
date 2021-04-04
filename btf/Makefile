@@ -13,6 +13,7 @@ APPS = cachestat \
        fdatasync \
        fsync \
        msync \
+       process \
        sync \
        sync_file_range \
        syncfs \
