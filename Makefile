@@ -2,6 +2,7 @@ CC=gcc
 
 KERNEL_DIR = kernel/
 BTF_DIR = btf/
+PLUGIN_DIR = netdata/
 KERNEL_PROGRAM = $(KERNEL_DIR)process_kern.o
 
 KERNEL_VERSION="$(shell if [ -f /usr/src/linux/include/config/kernel.release ]; then cat /usr/src/linux/include/config/kernel.release; else cat /proc/sys/kernel/osrelease; fi)"
@@ -28,7 +29,10 @@ libbpf.a:
 btfbinaries:
 	cd $(BTF_DIR) && $(MAKE)
 
-binaries: libbpf.a btfbinaries $(KERNEL_PROGRAM)
+plugin:
+	cd $(PLUGIN_DIR) && $(MAKE)
+
+binaries: libbpf.a btfbinaries $(KERNEL_PROGRAM) plugin
 	sh rename_binaries.sh "$(VER_MAJOR)" "$(VER_MINOR)"
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ]; then tar -cf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar [pr]netdata_ebpf_*.$(VER_MAJOR).$(VER_MINOR).o; else echo "ERROR: Cannot find BPF programs"; exit 1; fi
 	if [ "$${DEBUG:-0}" -eq 1 ]; then tar -uvf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar tools/check-kernel-config.sh; fi
@@ -43,6 +47,7 @@ clean:
 	cd $(KERNEL_DIR) && $(MAKE) clean;
 	cd $(LIBBPF_DIR) && $(MAKE) clean
 	cd $(BTF_DIR) && $(MAKE) clean
+	cd $(PLUGIN_DIR) && $(MAKE) clean
 	rm artifacts/*
 
 install:
