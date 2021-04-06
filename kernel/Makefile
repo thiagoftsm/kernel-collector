@@ -50,6 +50,7 @@ APPS= dc \
       nfs \
       xfs \
       btrfs \
+      sync_file_range \
       #
 
 all: $(APPS)

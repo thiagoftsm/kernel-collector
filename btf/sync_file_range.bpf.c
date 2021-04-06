@@ -20,7 +20,7 @@ struct {
  *
  ***********************************************************************************/
 
-SEC("kprobe/" NETDATA_SYSCALL(sync_file_range))
+SEC("kprobe/__x86_sys_sync_file_range")
 int BPF_KPROBE(netdata_syscall_sync_file_range)
 {
     libnetdata_update_global(&tbl_syncfr, NETDATA_KEY_SYNC_CALL, 1);
