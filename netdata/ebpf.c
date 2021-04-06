@@ -6,30 +6,13 @@
 #include <unistd.h>
 
 #include "sync.skel.h"
-
-/*
-static struct env {
-        bool verbose;
-        bool count;
-        bool print_timestamp;
-        bool print_uid;
-        pid_t pid;
-        uid_t uid;
-        int nports;
-        int ports[MAX_PORTS];
-} env = {
-    .uid = (uid_t) -1,
-};
-*/
+#include "msync.skel.h"
+#include "fsync.skel.h"
 
 static int libbpf_print_fn(enum libbpf_print_level level,
                 const char *format, va_list args)
 {
-    /*
-        if (level == LIBBPF_DEBUG && !env.verbose)
-                return 0;
-                */
-        return vfprintf(stderr, format, args);
+    return vfprintf(stderr, format, args);
 }
 
 static int bump_memlock_rlimit(void)
@@ -45,6 +28,7 @@ static int bump_memlock_rlimit(void)
 
 void *sync_thread(void *ptr)
 {
+    char *localname = { "sync" };
     int *sl = ptr;
     struct sync_bpf *obj = NULL;
     struct bpf_object *obj_sl = NULL;
@@ -54,19 +38,19 @@ void *sync_thread(void *ptr)
         printf("STATIC\n");
         obj = sync_bpf__open();
         if (!obj) {
-            fprintf(stderr, "Cannot allocate\n");
+            fprintf(stderr, "Cannot allocate %s\n", localname);
             return NULL;
         }
 
         int err = sync_bpf__load(obj);
         if (err) {
-            fprintf(stderr, "Error to load %d\n", err);
+            fprintf(stderr, "Error to load %s %d\n", localname, err);
             goto endsync;
         }
 
         err = sync_bpf__attach(obj);
         if (err) {
-            fprintf(stderr, "Error to attach %d\n", err);
+            fprintf(stderr, "Error to attach %s %d\n", localname, err);
             goto endsync;
         }
 
@@ -81,41 +65,129 @@ void *sync_thread(void *ptr)
             printf("%d\n", bpf_map__fd(map));
         }
 
-        /*
-        int prog_fd;
-        if (bpf_prog_load("../kernel/psync_kern.o", BPF_PROG_TYPE_UNSPEC, sl_obj, &prog_fd)) {
-            fprintf(stderr, "Fail to load ebpf_program");
-            goto endsync;
-        }
-
-        struct bpf_map *map;
-        i = 0;
-        bpf_map__for_each(map, *sl_obj)
-        {
-            map_fd[i] = bpf_map__fd(map);
-            i++;
-        }
-
-        struct bpf_program *prog;
-        struct bpf_link **links = calloc(64 , sizeof(struct bpf_link *));
-        i = 0;
-        bpf_object__for_each_program(prog, *sl_obj)
-        {
-            links[i] = bpf_program__attach(prog);
-            i++;
-        }
-        */
     }
 
     for ( i = 0; i < 10 ; i++) {
         sleep(1);
-        fprintf(stdout, "MAP ID: %d\n", i);
     }
 
 
 endsync:
     if (*sl == 0) {
         sync_bpf__destroy(obj);
+    } else {
+        bpf_object__unload(obj_sl);
+    }
+
+    return NULL;
+}
+
+void *msync_thread(void *ptr)
+{
+    char *localname = { "msync" };
+    int *sl = ptr;
+    struct msync_bpf *obj = NULL;
+    struct bpf_object *obj_sl = NULL;
+    struct bpf_map *map;
+    int i;
+    if (*sl == 0) {
+        printf("STATIC\n");
+        obj = msync_bpf__open();
+        if (!obj) {
+            fprintf(stderr, "Cannot allocate %s\n", localname);
+            return NULL;
+        }
+
+        int err = msync_bpf__load(obj);
+        if (err) {
+            fprintf(stderr, "Error to load %s %d\n", localname, err);
+            goto endmsync;
+        }
+
+        err = msync_bpf__attach(obj);
+        if (err) {
+            fprintf(stderr, "Error to attach %s %d\n", localname, err);
+            goto endmsync;
+        }
+
+        printf("MAP ID: %d\n", bpf_map__fd(obj->maps.tbl_msync));
+    } else {
+        printf("SHARED\n");
+        obj_sl = bpf_object__open("../kernel/pmsync_kern.o");
+        bpf_object__load(obj_sl);
+
+        bpf_map__for_each(map, obj_sl)
+        {
+            printf("%d\n", bpf_map__fd(map));
+        }
+
+    }
+
+    for ( i = 0; i < 10 ; i++) {
+        sleep(1);
+    }
+
+
+endmsync:
+    if (*sl == 0) {
+        msync_bpf__destroy(obj);
+    } else {
+        bpf_object__unload(obj_sl);
+    }
+
+    return NULL;
+}
+
+
+void *fsync_thread(void *ptr)
+{
+    char *localname = { "fsync" };
+    int *sl = ptr;
+    struct fsync_bpf *obj = NULL;
+    struct bpf_object *obj_sl = NULL;
+    struct bpf_map *map;
+    int i;
+    if (*sl == 0) {
+        printf("STATIC\n");
+        obj = fsync_bpf__open();
+        if (!obj) {
+            fprintf(stderr, "Cannot allocate %s\n", localname);
+            return NULL;
+        }
+
+        int err = fsync_bpf__load(obj);
+        if (err) {
+            fprintf(stderr, "Error to load %s %d\n", localname, err);
+            goto endfsync;
+        }
+
+        err = fsync_bpf__attach(obj);
+        if (err) {
+            fprintf(stderr, "Error to attach %s %d\n", localname, err);
+            goto endfsync;
+        }
+
+        printf("MAP ID: %d\n", bpf_map__fd(obj->maps.tbl_fsync));
+    } else {
+        printf("SHARED\n");
+        obj_sl = bpf_object__open("../kernel/pfsync_kern.o");
+        bpf_object__load(obj_sl);
+
+        bpf_map__for_each(map, obj_sl)
+        {
+            printf("%d\n", bpf_map__fd(map));
+        }
+
+    }
+
+    for ( i = 0; i < 10 ; i++) {
+        sleep(1);
+    }
+
+
+endfsync:
+    if (*sl == 0) {
+        fsync_bpf__destroy(obj);
     } else {
         bpf_object__unload(obj_sl);
     }
@@ -137,9 +209,9 @@ int main(int argc, char **argv)
 
     libbpf_set_print(libbpf_print_fn);
 
-#define MAX_LOOP 1
+#define MAX_LOOP 3
     pthread_t threads[MAX_LOOP];
-    void * (*fp[])(void *) = { sync_thread};
+    void * (*fp[])(void *) = { sync_thread, msync_thread, fsync_thread};
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
