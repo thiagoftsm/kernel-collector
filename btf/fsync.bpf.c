@@ -20,8 +20,8 @@ struct {
  *
  ***********************************************************************************/
 
-SEC("kprobe/" NETDATA_SYSCALL(fsync))
-int BPF_KPROBE(netdata_syscall_fsync, int fd)
+SEC("kprobe/__x64_sys_fsync")
+int BPF_KPROBE(netdata_syscall_fsync)
 {
     libnetdata_update_global(&tbl_fsync, NETDATA_KEY_SYNC_CALL, 1);
 

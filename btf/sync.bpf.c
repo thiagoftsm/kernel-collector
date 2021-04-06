@@ -22,10 +22,6 @@ struct {
 
 SEC("kprobe/__x64_sys_sync")
 int BPF_KPROBE(netdata_syscall_sync)
-/*
-SEC("fentry.s/__x64_sys_sync")
-int BPF_PROG(fentry_sync)
-*/
 {
     libnetdata_update_global(&tbl_sync, NETDATA_KEY_SYNC_CALL, 1);
 
