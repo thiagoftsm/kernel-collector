@@ -26,7 +26,7 @@ clean:
 %.bpf.o: %.bpf.c
 	$(call msg,BPF,$@)
 	$(CLANG) -g -O2 -target bpf -D__TARGET_ARCH_$(ARCH) $(INCLUDES) -c $(filter %.c,$^) -o $@
-	$(LLVM_STRIP) -g $@ # strip useless DWARF info
+	#$(LLVM_STRIP) -g $@ # strip useless DWARF info
 
 %.skel.h: %.bpf.o 
 	$(BPFTOOL) gen skeleton $< > $@

@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <pthread.h>
+#include <unistd.h>
 
-#include "msync.skel.h"
+#include "sync.skel.h"
 
 /*
 static struct env {
@@ -41,30 +43,72 @@ static int bump_memlock_rlimit(void)
 }
 
 
-void *msync_thread(void *ptr)
+void *sync_thread(void *ptr)
 {
-    struct msync_bpf *obj = msync_bpf__open();
-    if (!obj) {
-        fprintf(stderr, "Cannot allocate\n");
-        return NULL;
+    int *sl = ptr;
+    struct sync_bpf *obj = NULL;
+    int i;
+    if (*sl == 0) {
+        printf("STATIC\n");
+        obj = sync_bpf__open();
+        if (!obj) {
+            fprintf(stderr, "Cannot allocate\n");
+            return NULL;
+        }
+
+        int err = sync_bpf__load(obj);
+        if (err) {
+            fprintf(stderr, "Error to load %d\n", err);
+            goto endsync;
+        }
+
+        err = sync_bpf__attach(obj);
+        if (err) {
+            fprintf(stderr, "Error to attach %d\n", err);
+            goto endsync;
+        }
+    } else {
+        printf("SHARED\n");
+        obj = bpf_object__open("../kernel/psync_kern.o");
+        bpf_object__load(obj);
+        /*
+        int prog_fd;
+        if (bpf_prog_load("../kernel/psync_kern.o", BPF_PROG_TYPE_UNSPEC, sl_obj, &prog_fd)) {
+            fprintf(stderr, "Fail to load ebpf_program");
+            goto endsync;
+        }
+
+        struct bpf_map *map;
+        i = 0;
+        bpf_map__for_each(map, *sl_obj)
+        {
+            map_fd[i] = bpf_map__fd(map);
+            i++;
+        }
+
+        struct bpf_program *prog;
+        struct bpf_link **links = calloc(64 , sizeof(struct bpf_link *));
+        i = 0;
+        bpf_object__for_each_program(prog, *sl_obj)
+        {
+            links[i] = bpf_program__attach(prog);
+            i++;
+        }
+        */
     }
 
-    int err = msync_bpf__load(obj);
-    if (err) {
-        fprintf(stderr, "Error to load %d\n", err);
-        goto endmsync;
+    for ( i = 0; i < 10 ; i++) {
+        sleep(1);
+        fprintf(stdout, "%d\n", i);
     }
 
-    err = msync_bpf__attach(obj);
-    if (err) {
-        fprintf(stderr, "Error to attach %d\n", err);
-        goto endmsync;
+
+endsync:
+    if (*sl == 0) {
+        sync_bpf__destroy(obj);
+    } else {
     }
 
-    // INFINITE LOOP HERE
-
-endmsync:
-    msync_bpf__destroy(obj);
     return NULL;
 }
 
@@ -75,11 +119,16 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    int sl = 1;
+    if (argc > 1) {
+        sl = atoi(argv[1]);
+    }
+
     libbpf_set_print(libbpf_print_fn);
 
 #define MAX_LOOP 1
     pthread_t threads[MAX_LOOP];
-    void * (*fp[])(void *) = { msync_thread};
+    void * (*fp[])(void *) = { sync_thread};
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -87,7 +136,7 @@ int main(int argc, char **argv)
 
     int i, ret;
     for ( i = 0 ; i < MAX_LOOP; i++) {
-        ret = pthread_create(&threads[i], &attr, fp[i], NULL);
+        ret = pthread_create(&threads[i], &attr, fp[i], (void *)&sl);
         if (ret)
             break;
     }
