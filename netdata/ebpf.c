@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "sync.skel.h"
+#include "syncfs.skel.h"
 #include "msync.skel.h"
 #include "fsync.skel.h"
 #include "fdatasync.skel.h"
@@ -195,6 +196,62 @@ endfsync:
     return NULL;
 }
 
+void *syncfs_thread(void *ptr)
+{
+    char *localname = { "syncfs" };
+    int *sl = ptr;
+    struct syncfs_bpf *obj = NULL;
+    struct bpf_object *obj_sl = NULL;
+    struct bpf_map *map;
+    int i;
+    if (*sl == 0) {
+        printf("STATIC\n");
+        obj = syncfs_bpf__open();
+        if (!obj) {
+            fprintf(stderr, "Cannot allocate %s\n", localname);
+            return NULL;
+        }
+
+        int err = syncfs_bpf__load(obj);
+        if (err) {
+            fprintf(stderr, "Error to load %s %d\n", localname, err);
+            goto endsyncfs;
+        }
+
+        err = syncfs_bpf__attach(obj);
+        if (err) {
+            fprintf(stderr, "Error to attach %s %d\n", localname, err);
+            goto endsyncfs;
+        }
+
+        printf("MAP ID: %d\n", bpf_map__fd(obj->maps.tbl_syncfs));
+    } else {
+        printf("SHARED\n");
+        obj_sl = bpf_object__open("../kernel/psyncfs_kern.o");
+        bpf_object__load(obj_sl);
+
+        bpf_map__for_each(map, obj_sl)
+        {
+            printf("%d\n", bpf_map__fd(map));
+        }
+
+    }
+
+    for ( i = 0; i < 10 ; i++) {
+        sleep(1);
+    }
+
+
+endsyncfs:
+    if (*sl == 0) {
+        syncfs_bpf__destroy(obj);
+    } else {
+        bpf_object__unload(obj_sl);
+    }
+
+    return NULL;
+}
+
 void *fdatasync_thread(void *ptr)
 {
     char *localname = { "fdatasync" };
@@ -264,9 +321,9 @@ int main(int argc, char **argv)
 
     libbpf_set_print(libbpf_print_fn);
 
-#define MAX_LOOP 4
+#define MAX_LOOP 5
     pthread_t threads[MAX_LOOP];
-    void * (*fp[])(void *) = { sync_thread, msync_thread, fsync_thread, fdatasync_thread};
+    void * (*fp[])(void *) = { sync_thread, msync_thread, fsync_thread, fdatasync_thread, syncfs_thread};
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
