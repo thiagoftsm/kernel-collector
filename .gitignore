@@ -14,3 +14,5 @@
 
 btf/bpf/*
 btf/pkgconfig/*
+
+netdata/ebpf.plugin

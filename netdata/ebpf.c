@@ -47,6 +47,8 @@ void *sync_thread(void *ptr)
 {
     int *sl = ptr;
     struct sync_bpf *obj = NULL;
+    struct bpf_object *obj_sl = NULL;
+    struct bpf_map *map;
     int i;
     if (*sl == 0) {
         printf("STATIC\n");
@@ -67,10 +69,18 @@ void *sync_thread(void *ptr)
             fprintf(stderr, "Error to attach %d\n", err);
             goto endsync;
         }
+
+        printf("MAP ID: %d\n", bpf_map__fd(obj->maps.tbl_sync));
     } else {
         printf("SHARED\n");
-        obj = bpf_object__open("../kernel/psync_kern.o");
-        bpf_object__load(obj);
+        obj_sl = bpf_object__open("../kernel/psync_kern.o");
+        bpf_object__load(obj_sl);
+
+        bpf_map__for_each(map, obj_sl)
+        {
+            printf("%d\n", bpf_map__fd(map));
+        }
+
         /*
         int prog_fd;
         if (bpf_prog_load("../kernel/psync_kern.o", BPF_PROG_TYPE_UNSPEC, sl_obj, &prog_fd)) {
@@ -99,7 +109,7 @@ void *sync_thread(void *ptr)
 
     for ( i = 0; i < 10 ; i++) {
         sleep(1);
-        fprintf(stdout, "%d\n", i);
+        fprintf(stdout, "MAP ID: %d\n", i);
     }
 
 
@@ -107,6 +117,7 @@ endsync:
     if (*sl == 0) {
         sync_bpf__destroy(obj);
     } else {
+        bpf_object__unload(obj_sl);
     }
 
     return NULL;
