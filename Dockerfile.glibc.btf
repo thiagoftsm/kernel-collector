@@ -3,7 +3,13 @@ FROM ubuntu:20.10 AS build
 ARG ARCH=x86
 ENV ARCH=$ARCH
 
-ARG KERNEL_VERSION=5.4.20
+ARG KERNEL_VERSION=5.10.27
 ENV KERNEL_VERSION=$KERNEL_VERSION
 
 ENV _LIBC=glibc
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y build-essential autoconf automake coreutils pkg-config \
+                       bc libelf-dev libssl-dev clang-tools-10 libclang-10-dev \
+                       llvm-10 rsync bison flex tar xz-utils wget

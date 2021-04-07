@@ -33,27 +33,27 @@ VER_PATCH=$(shell echo $(KERNEL_VERSION) | cut -d. -f3)
 
 CURRENT_KERNEL=$(shell echo $(VER_MAJOR)\*65536 + $(VER_MINOR)\*256 + $(VER_PATCH) |bc)
 
-APPS= dc \
-      md \
-      process \
-      network_viewer \
-      cachestat \
-      fdatasync \
-      fsync \
-      msync \
-      process \
-      sync \
-      syncfs \
-      swap \
-      ext4 \
-      nfs \
-      nfs \
-      xfs \
-      btrfs \
-      sync_file_range \
-      #
+NETDATA_APPS= dc \
+	      md \
+	      process \
+	      network_viewer \
+	      cachestat \
+	      fdatasync \
+	      fsync \
+	      msync \
+	      process \
+	      sync \
+	      syncfs \
+	      swap \
+	      ext4 \
+	      nfs \
+	      nfs \
+	      xfs \
+	      btrfs \
+	      sync_file_range \
+	      #
 
-all: $(APPS)
+all: $(NETDATA_APPS)
 
 %_kern.o: %_kern.c
 	if [ -w /usr/src/linux/include/generated/autoconf.h ]; then  if [ "$(CURRENT_KERNEL)" -ge 328448 ]; then sed -i -e 's/\(#define CONFIG_CC_HAS_ASM_INLINE 1\)/\/\/\1/' /usr/src/linux/include/generated/autoconf.h; fi ; fi
@@ -88,7 +88,7 @@ all: $(APPS)
 		-O2 -emit-llvm -c $<
 	$(LLC) -march=bpf -filetype=obj -o p$@ $(<:.c=.ll)
 
-$(APPS): %: %_kern.o
+$(NETDATA_APPS): %: %_kern.o
 
 clean:
 	rm *.o *.ll
