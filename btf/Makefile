@@ -33,10 +33,3 @@ clean:
 
 $(APPS): %: %.skel.h
 
-# delete failed targets
-.DELETE_ON_ERROR:
-
-# keep intermediate (.skel.h, .bpf.o, etc) targets
-.SECONDARY:
-
-
