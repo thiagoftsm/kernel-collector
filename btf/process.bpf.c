@@ -70,7 +70,6 @@ static void netdata_update_u32(u32 *res, u32 value)
  ***********************************************************************************/
 
 SEC("kprobe/vfs_write")
-//int BPF_KPROBE(netdata_vfs_write, struct file *f, const char __user *u, size_t size, loff_t *l)
 int netdata_vfs_write(struct pt_regs* ctx)
 {
     struct netdata_pid_stat_t *fill;
@@ -403,9 +402,9 @@ int netdata_release_task(struct pt_regs* ctx)
     return 0;
 }
 
-
 /*
- * ADD CALLS DIRECT TO FORK AND CLONE
+ * when 0 is returned the father has the son cloned, when they 
+ * http://www2.comp.ufscar.br/mediawiki/index.php/Grupo_16
 SEC("kprobe/kernel_clone")
 int netdata_kernel_clone(struct pt_regs* ctx)
 {

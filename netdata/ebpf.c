@@ -13,6 +13,7 @@
 #include "fsync.skel.h"
 #include "fdatasync.skel.h"
 #include "sync_file_range.skel.h"
+#include "process.skel.h"
 
 static int libbpf_print_fn(enum libbpf_print_level level,
                 const char *format, va_list args)
@@ -479,6 +480,62 @@ enddc:
     return NULL;
 }
 
+void *process_thread(void *ptr)
+{
+    char *localname = { "process" };
+    int *sl = ptr;
+    struct process_bpf *obj = NULL;
+    struct bpf_object *obj_sl = NULL;
+    struct bpf_map *map;
+    int i;
+    if (*sl == 0) {
+        printf("STATIC\n");
+        obj = process_bpf__open();
+        if (!obj) {
+            fprintf(stderr, "Cannot allocate %s\n", localname);
+            return NULL;
+        }
+
+        int err = process_bpf__load(obj);
+        if (err) {
+            fprintf(stderr, "Error to load %s %d\n", localname, err);
+            goto endprocess;
+        }
+
+        err = process_bpf__attach(obj);
+        if (err) {
+            fprintf(stderr, "Error to attach %s %d\n", localname, err);
+            goto endprocess;
+        }
+
+        printf("MAP ID: %d\n", bpf_map__fd(obj->maps.tbl_total_stats));
+    } else {
+        printf("SHARED\n");
+        obj_sl = bpf_object__open("../kernel/pprocess_kern.o");
+        bpf_object__load(obj_sl);
+
+        bpf_map__for_each(map, obj_sl)
+        {
+            printf("%d\n", bpf_map__fd(map));
+        }
+
+    }
+
+    for ( i = 0; i < 10 ; i++) {
+        sleep(1);
+    }
+
+
+endprocess:
+    if (*sl == 0) {
+        process_bpf__destroy(obj);
+    } else {
+        bpf_object__unload(obj_sl);
+    }
+
+    return NULL;
+}
+
 int main(int argc, char **argv)
 {
     if (bump_memlock_rlimit()) {
@@ -492,10 +549,10 @@ int main(int argc, char **argv)
 
     libbpf_set_print(libbpf_print_fn);
 
-#define MAX_LOOP 8
+#define MAX_LOOP 9
     pthread_t threads[MAX_LOOP];
     void * (*fp[])(void *) = { sync_thread, msync_thread, fsync_thread, fdatasync_thread,
-        syncfs_thread, sync_file_range_thread, cachestat_thread, dc_thread};
+        syncfs_thread, sync_file_range_thread, cachestat_thread, dc_thread, process_thread};
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
