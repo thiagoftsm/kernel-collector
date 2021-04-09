@@ -33,24 +33,23 @@ VER_PATCH=$(shell echo $(KERNEL_VERSION) | cut -d. -f3)
 
 CURRENT_KERNEL=$(shell echo $(VER_MAJOR)\*65536 + $(VER_MINOR)\*256 + $(VER_PATCH) |bc)
 
-NETDATA_APPS= dc \
-	      md \
-	      process \
-	      network_viewer \
+NETDATA_APPS= btrfs \
+	      dc \
+	      ext4 \
 	      cachestat \
 	      fdatasync \
 	      fsync \
+	      io_latency_tp \
+	      md \
 	      msync \
+	      network_viewer \
+	      nfs \
 	      process \
 	      sync \
 	      syncfs \
-	      swap \
-	      ext4 \
-	      nfs \
-	      nfs \
-	      xfs \
-	      btrfs \
 	      sync_file_range \
+	      swap \
+	      xfs \
 	      #
 
 all: $(NETDATA_APPS)

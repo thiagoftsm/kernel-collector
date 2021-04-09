@@ -6,12 +6,6 @@
 #include "bpf_helpers.h"
 #include "netdata_ebpf.h"
 
-/*
-typedef struct netdata_flush_key {
-    char key[DISK_NAME_LEN];
-} netdata_flush_key_t;
-*/
-
 /************************************************************************************
  *     
  *                                 MAPS
@@ -314,63 +308,11 @@ int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
     return 0;
 }
 
-/*
-SEC("kprobe/md_flush_request")
-int netdata_md_flush_request(struct pt_regs *ctx)
-{
-    netdata_flush_key_t fk;
-    u64 *fill, data;
-    struct bio *bio;
-    struct gendisk *bi_disk;
-    char *disk_name;
-
-    bio = (struct bio *)PT_REGS_PARM1(ctx);
-    bi_disk = _(bio->bi_disk);
-    bpf_probe_read(fk.key, sizeof(fk.key), bi_disk->disk_name);
-
-    fill = bpf_map_lookup_elem(&tbl_md_flush ,&fk);
-    if (fill) {
-        netdata_update_u64(fill, 1);
-    } else {
-        data = 1;
-        bpf_map_update_elem(&tbl_md_flush, &fk, &data, BPF_ANY);
-    }
-
-    return 0;
-}
-*/
-
 /************************************************************************************
  *     
  *                               END DISK SECTION
  *     
  ***********************************************************************************/
-
-/************************************************************************************
- *     
- *                               SYNC SECTION
- *     
- ***********************************************************************************/
-
-/*
-SEC("kretprobe/" NETDATA_SYSCALL(sync)) 
-int netdata_syscall_sync(struct pt_regs* ctx)
-{
-    netdata_update_global(NETDATA_KEY_CALL_SYNC_CALL, 1);
-    int ret = (ssize_t)PT_REGS_RC(ctx);
-    if (ret < 0)
-        netdata_update_global(NETDATA_KEY_CALL_SYNC_ERROR, 1);
-
-    return 0;
-}
-*/
-
-/************************************************************************************
- *     
- *                             END SYNC SECTION
- *     
- ***********************************************************************************/
-
 /************************************************************************************
  *     
  *                               MOUNT SECTION
