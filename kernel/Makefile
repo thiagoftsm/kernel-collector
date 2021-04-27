@@ -53,6 +53,13 @@ NETDATA_APPS= btrfs \
 	      #
 
 all: $(NETDATA_APPS)
+#clang --target bpf
+#The .eh_frame is generated because the C code is compiled first with native architecture like
+#  clang -O2 -g -S -emit-llvm file.c  <==== native x86_64 arch
+#  llc -march=bpf file.ll
+
+#Compile with x64 arch will produce .eh_frame which tries to facilitate stack unwinding.
+#If you compile all the way with bpf  ..., you should not see .eh_frame.
 
 %_kern.o: %_kern.c
 	if [ -w /usr/src/linux/include/generated/autoconf.h ]; then  if [ "$(CURRENT_KERNEL)" -ge 328448 ]; then sed -i -e 's/\(#define CONFIG_CC_HAS_ASM_INLINE 1\)/\/\/\1/' /usr/src/linux/include/generated/autoconf.h; fi ; fi
