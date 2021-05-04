@@ -64,26 +64,6 @@ int netdata_swap_writepage(struct pt_regs* ctx)
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     __u32 pid = (__u32)(pid_tgid >> 32);
 
-    libnetdata_update_global(&tbl_swap, NETDATA_KEY_SWAP_READPAGE_CALL, 1);
-
-    netdata_swap_access_t *fill = bpf_map_lookup_elem(&tbl_pid_swap ,&pid);
-    if (fill) {
-        libnetdata_update_u64(&fill->read, 1);
-    } else {
-        data.read = 1;
-        bpf_map_update_elem(&tbl_pid_swap, &pid, &data, BPF_ANY);
-    }
-
-    return 0;
-}
-
-SEC("kprobe/swap_writepage")
-int netdata_swap_writepage(struct pt_regs* ctx)
-{
-    netdata_swap_access_t data = {};
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    __u32 pid = (__u32)(pid_tgid >> 32);
-
     libnetdata_update_global(&tbl_swap, NETDATA_KEY_SWAP_WRITEPAGE_CALL, 1);
 
     netdata_swap_access_t *fill = bpf_map_lookup_elem(&tbl_pid_swap ,&pid);

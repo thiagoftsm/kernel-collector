@@ -62,7 +62,6 @@ all: $(NETDATA_APPS)
 #If you compile all the way with bpf  ..., you should not see .eh_frame.
 
 %_kern.o: %_kern.c
-	if [ -w /usr/src/linux/include/generated/autoconf.h ]; then  if [ "$(CURRENT_KERNEL)" -ge 328448 ]; then sed -i -e 's/\(#define CONFIG_CC_HAS_ASM_INLINE 1\)/\/\/\1/' /usr/src/linux/include/generated/autoconf.h; fi ; fi
 	$(CLANG) $(EXTRA_CFLAGS) -S -nostdinc $(LINUXINCLUDE) $(LLVM_INCLUDES) \
 		-D__KERNEL__ -D__ASM_SYSREG_H -Wno-unused-value -Wno-pointer-sign \
 	    	-Wno-compare-distinct-pointer-types \
