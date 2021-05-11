@@ -52,7 +52,7 @@ enum vfs_counters {
     NETDATA_KEY_ERROR_VFS_UNLINK,
 
     // Keep this as last and don't skip numbers as it is used as element counter
-    NETDATA_GLOBAL_COUNTER
+    NETDATA_VFS_COUNTER
 };
 
 #endif /* _NETDATA_VFS_H_ */

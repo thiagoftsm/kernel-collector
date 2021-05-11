@@ -11,7 +11,6 @@ struct netdata_pid_stat_t {
 
     //Counter
     __u32 open_call;                    //open syscalls (open and openat)
-    __u32 unlink_call;                  //Remove syscalls (unlink for while)
     __u32 exit_call;                    //Exit syscalls (exit for exit_group)
     __u32 release_call;                 //Exit syscalls (exit and exit_group)
     __u32 fork_call;                    //Start syscall (fork, clone, forkv)
@@ -20,7 +19,6 @@ struct netdata_pid_stat_t {
 
     //Counter
     __u32 open_err;
-    __u32 unlink_err;
     __u32 fork_err;
     __u32 clone_err;
     __u32 close_err;
