@@ -16,6 +16,9 @@ struct netdata_vfs_stat_t {
     __u32 read_call;                    
     __u32 readv_call;                   
     __u32 unlink_call;                  
+    __u32 fsync_call;                  
+    __u32 open_call;                  
+    __u32 create_call;                  
 
     //Accumulator
     __u64 write_bytes;
@@ -29,6 +32,9 @@ struct netdata_vfs_stat_t {
     __u32 read_err;
     __u32 readv_err;
     __u32 unlink_err;
+    __u32 fsync_err;
+    __u32 open_err;
+    __u32 create_err;
 };
 
 enum vfs_counters {
@@ -50,6 +56,15 @@ enum vfs_counters {
 
     NETDATA_KEY_CALLS_VFS_UNLINK,
     NETDATA_KEY_ERROR_VFS_UNLINK,
+
+    NETDATA_KEY_CALLS_VFS_FSYNC,
+    NETDATA_KEY_ERROR_VFS_FSYNC,
+
+    NETDATA_KEY_CALLS_VFS_OPEN,
+    NETDATA_KEY_ERROR_VFS_OPEN,
+
+    NETDATA_KEY_CALLS_VFS_CREATE,
+    NETDATA_KEY_ERROR_VFS_CREATE,
 
     // Keep this as last and don't skip numbers as it is used as element counter
     NETDATA_VFS_COUNTER

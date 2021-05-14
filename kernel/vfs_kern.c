@@ -120,12 +120,6 @@ int netdata_sys_write(struct pt_regs* ctx)
         bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
     }
 
-#if NETDATASEL == 1 && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0))
-    if (ret < 0) {
-        send_perf_error(ctx,(int)ret, 4, pid);
-    }
-#endif
-
     return 0;
 }
 
@@ -186,12 +180,6 @@ int netdata_sys_writev(struct pt_regs* ctx)
 
         bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
     }
-
-#if NETDATASEL == 1 && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0))
-    if (ret < 0) {
-        send_perf_error(ctx,(int)ret, 4, pid);
-    }
-#endif
 
     return 0;
 }
@@ -254,12 +242,6 @@ int netdata_sys_read(struct pt_regs* ctx)
         bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
     }
 
-#if NETDATASEL == 1 && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0))
-    if (ret < 0) {
-        send_perf_error(ctx,(int)ret, 3, pid);
-    }
-#endif
-
     return 0;
 }
 
@@ -321,12 +303,6 @@ int netdata_sys_readv(struct pt_regs* ctx)
         bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
     }
 
-#if NETDATASEL == 1 && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0))
-    if (ret < 0) {
-        send_perf_error(ctx,(int)ret, 3, pid);
-    }
-#endif
-
     return 0;
 }
 
@@ -376,11 +352,152 @@ int netdata_sys_unlink(struct pt_regs* ctx)
         bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
     }
 
-#if NETDATASEL == 1 && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0))
-    if (ret < 0) {
-        send_perf_error(ctx,(int)ret, 2, pid);
-    }
+    return 0;
+}
+
+#if NETDATASEL < 2
+SEC("kretprobe/vfs_fsync")
+#else
+SEC("kprobe/vfs_fsync")
 #endif
+int netdata_vfs_fsync(struct pt_regs* ctx)
+{
+#if NETDATASEL < 2
+    int ret = (int)PT_REGS_RC(ctx);
+#endif
+    struct netdata_vfs_stat_t data = { };
+    struct netdata_vfs_stat_t *fill;
+    __u64 pid_tgid = bpf_get_current_pid_tgid();
+    __u32 pid = (__u32)(pid_tgid >> 32);
+    __u32 tgid = (__u32)( 0x00000000FFFFFFFF & pid_tgid);
+
+    libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_CALLS_VFS_FSYNC, 1);
+    fill = bpf_map_lookup_elem(&tbl_vfs_pid ,&pid);
+    if (fill) {
+        netdata_update_u32(&fill->fsync_call, 1) ;
+
+#if NETDATASEL < 2
+        if (ret < 0) {
+            libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_ERROR_VFS_FSYNC, 1);
+            netdata_update_u32(&fill->fsync_err, 1) ;
+        } 
+#endif
+    } else {
+        data.pid_tgid = pid_tgid;  
+        data.pid = tgid;  
+
+#if NETDATASEL < 2
+        if (ret < 0) {
+            libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_ERROR_VFS_FSYNC, 1);
+            data.fsync_err = 1;
+        } else {
+#endif
+            data.fsync_err = 0;
+#if NETDATASEL < 2
+        }
+#endif
+        data.fsync_call = 1;
+
+        bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
+    }
+
+    return 0;
+}
+
+#if NETDATASEL < 2
+SEC("kretprobe/vfs_open")
+#else
+SEC("kprobe/vfs_open")
+#endif
+int netdata_vfs_open(struct pt_regs* ctx)
+{
+#if NETDATASEL < 2
+    int ret = (int)PT_REGS_RC(ctx);
+#endif
+    struct netdata_vfs_stat_t data = { };
+    struct netdata_vfs_stat_t *fill;
+    __u64 pid_tgid = bpf_get_current_pid_tgid();
+    __u32 pid = (__u32)(pid_tgid >> 32);
+    __u32 tgid = (__u32)( 0x00000000FFFFFFFF & pid_tgid);
+
+    libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_CALLS_VFS_OPEN, 1);
+    fill = bpf_map_lookup_elem(&tbl_vfs_pid ,&pid);
+    if (fill) {
+        netdata_update_u32(&fill->open_call, 1) ;
+
+#if NETDATASEL < 2
+        if (ret < 0) {
+            libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_ERROR_VFS_OPEN, 1);
+            netdata_update_u32(&fill->open_err, 1) ;
+        } 
+#endif
+    } else {
+        data.pid_tgid = pid_tgid;  
+        data.pid = tgid;  
+
+#if NETDATASEL < 2
+        if (ret < 0) {
+            libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_ERROR_VFS_OPEN, 1);
+            data.open_err = 1;
+        } else {
+#endif
+            data.open_err = 0;
+#if NETDATASEL < 2
+        }
+#endif
+        data.open_call = 1;
+
+        bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
+    }
+
+    return 0;
+}
+
+#if NETDATASEL < 2
+SEC("kretprobe/vfs_create")
+#else
+SEC("kprobe/vfs_create")
+#endif
+int netdata_vfs_create(struct pt_regs* ctx)
+{
+#if NETDATASEL < 2
+    int ret = (int)PT_REGS_RC(ctx);
+#endif
+    struct netdata_vfs_stat_t data = { };
+    struct netdata_vfs_stat_t *fill;
+    __u64 pid_tgid = bpf_get_current_pid_tgid();
+    __u32 pid = (__u32)(pid_tgid >> 32);
+    __u32 tgid = (__u32)( 0x00000000FFFFFFFF & pid_tgid);
+
+    libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_CALLS_VFS_CREATE, 1);
+    fill = bpf_map_lookup_elem(&tbl_vfs_pid ,&pid);
+    if (fill) {
+        netdata_update_u32(&fill->create_call, 1) ;
+
+#if NETDATASEL < 2
+        if (ret < 0) {
+            libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_ERROR_VFS_CREATE, 1);
+            netdata_update_u32(&fill->create_err, 1) ;
+        } 
+#endif
+    } else {
+        data.pid_tgid = pid_tgid;  
+        data.pid = tgid;  
+
+#if NETDATASEL < 2
+        if (ret < 0) {
+            libnetdata_update_global(&tbl_vfs_stats, NETDATA_KEY_ERROR_VFS_CREATE, 1);
+            data.create_err = 1;
+        } else {
+#endif
+            data.create_err = 0;
+#if NETDATASEL < 2
+        }
+#endif
+        data.create_call = 1;
+
+        bpf_map_update_elem(&tbl_vfs_pid, &pid, &data, BPF_ANY);
+    }
 
     return 0;
 }

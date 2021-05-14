@@ -33,7 +33,7 @@ btfbinaries:
 plugin:
 	cd $(PLUGIN_DIR) && $(MAKE)
 
-binaries: libbpf.a btfbinaries $(KERNEL_PROGRAM) #plugin
+binaries: libbpf.a $(KERNEL_PROGRAM) #plugin
 	sh rename_binaries.sh "$(VER_MAJOR)" "$(VER_MINOR)"
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ]; then tar -cf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar [pr]netdata_ebpf_*.$(VER_MAJOR).$(VER_MINOR).o; else echo "ERROR: Cannot find BPF programs"; exit 1; fi
 	if [ "$${DEBUG:-0}" -eq 1 ]; then tar -uvf artifacts/netdata_ebpf-$(FIRST_KERNEL_VERSION)_$(VER_MAJOR).$(VER_MINOR)-$(_LIBC).tar tools/check-kernel-config.sh; fi
@@ -47,7 +47,7 @@ clean:
 	if [ -f pnetdata_ebpf_process.$(VER_MAJOR).$(VER_MINOR).o ] ; then rm *.o; fi
 	cd $(KERNEL_DIR) && $(MAKE) clean;
 	cd $(LIBBPF_DIR) && $(MAKE) clean
-	cd $(BTF_DIR) && $(MAKE) clean
+	#cd $(BTF_DIR) && $(MAKE) clean
 	#cd $(PLUGIN_DIR) && $(MAKE) clean
 	rm artifacts/*
 
