@@ -26,6 +26,10 @@ struct netdata_error_report_t {
     int err;
 };
 
+typedef enum {
+    NETDATA_EBPF_APPS_ENABLED
+} netdata_ebpf_constants_t;
+
 // Use __always_inline instead inline to keep compatiblity with old kernels
 // https://docs.cilium.io/en/v1.8/bpf/
 // The condition to test kernel was added, because __always_inline broke the epbf.plugin
@@ -138,3 +142,4 @@ static inline __u32 libnetdata_select_idx(__u64 val)
 #endif
 
 #endif /* _NETDATA_EBPF_ */
+
