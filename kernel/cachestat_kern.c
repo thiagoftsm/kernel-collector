@@ -9,12 +9,14 @@
 #include "bpf_helpers.h"
 #include "netdata_ebpf.h"
 
+/*
 struct bpf_map_def SEC("maps") cstat_const = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u32),
     .max_entries = 1
 };
+*/
 
 struct bpf_map_def SEC("maps") cstat_global = {
     .type = BPF_MAP_TYPE_HASH,
@@ -45,11 +47,13 @@ int netdata_add_to_page_cache_lru(struct pt_regs* ctx)
 {
     netdata_cachestat_t *fill, data = {};
     __u64 pid_tgid;
-    __u32 pid = NETDATA_EBPF_APPS_ENABLED;
+    __u32 pid; // = NETDATA_EBPF_APPS_ENABLED;
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_ADD_TO_PAGE_CACHE_LRU, 1);
 
+    /*
     __u32 *store_pid = bpf_map_lookup_elem(&cstat_const ,&pid);
     if (*store_pid) {
+    */
         pid_tgid = bpf_get_current_pid_tgid();
         pid = (__u32)(pid_tgid >> 32);
         fill = bpf_map_lookup_elem(&cstat_pid ,&pid);
@@ -59,7 +63,7 @@ int netdata_add_to_page_cache_lru(struct pt_regs* ctx)
             data.add_to_page_cache_lru = 1;
             bpf_map_update_elem(&cstat_pid, &pid, &data, BPF_ANY);
         }
-    }
+    //}
 
     return 0;
 }
@@ -69,11 +73,13 @@ int netdata_mark_page_accessed(struct pt_regs* ctx)
 {
     netdata_cachestat_t *fill, data = {};
     __u64 pid_tgid;
-    __u32 pid = NETDATA_EBPF_APPS_ENABLED;
+    __u32 pid ;// = NETDATA_EBPF_APPS_ENABLED;
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_MARK_PAGE_ACCESSED, 1);
 
+    /*
     __u32 *store_pid = bpf_map_lookup_elem(&cstat_const ,&pid);
     if (*store_pid) {
+    */
         pid_tgid = bpf_get_current_pid_tgid();
         pid = (__u32)(pid_tgid >> 32);
         fill = bpf_map_lookup_elem(&cstat_pid ,&pid);
@@ -83,7 +89,7 @@ int netdata_mark_page_accessed(struct pt_regs* ctx)
             data.mark_page_accessed = 1;
             bpf_map_update_elem(&cstat_pid, &pid, &data, BPF_ANY);
         }
-    }
+    //}
 
     return 0;
 }
@@ -93,11 +99,13 @@ int netdata_account_page_dirtied(struct pt_regs* ctx)
 {
     netdata_cachestat_t *fill, data = {};
     __u64 pid_tgid;
-    __u32 pid = NETDATA_EBPF_APPS_ENABLED;
+    __u32 pid ;// = NETDATA_EBPF_APPS_ENABLED;
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_ACCOUNT_PAGE_DIRTIED, 1);
 
+    /*
     __u32 *store_pid = bpf_map_lookup_elem(&cstat_const ,&pid);
     if (*store_pid) {
+    */
         pid_tgid = bpf_get_current_pid_tgid();
         pid = (__u32)(pid_tgid >> 32);
         fill = bpf_map_lookup_elem(&cstat_pid ,&pid);
@@ -107,7 +115,7 @@ int netdata_account_page_dirtied(struct pt_regs* ctx)
             data.account_page_dirtied = 1;
             bpf_map_update_elem(&cstat_pid, &pid, &data, BPF_ANY);
         }
-    }
+    //}
 
     return 0;
 }
@@ -117,11 +125,13 @@ int netdata_mark_buffer_dirty(struct pt_regs* ctx)
 {
     netdata_cachestat_t *fill, data = {};
     __u64 pid_tgid;
-    __u32 pid = NETDATA_EBPF_APPS_ENABLED;
+    __u32 pid ;// = NETDATA_EBPF_APPS_ENABLED;
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_MARK_BUFFER_DIRTY, 1);
 
+    /*
     __u32 *store_pid = bpf_map_lookup_elem(&cstat_const ,&pid);
     if (*store_pid) {
+    */
         pid_tgid = bpf_get_current_pid_tgid();
         pid = (__u32)(pid_tgid >> 32);
         fill = bpf_map_lookup_elem(&cstat_pid ,&pid);
@@ -131,7 +141,7 @@ int netdata_mark_buffer_dirty(struct pt_regs* ctx)
             data.mark_buffer_dirty = 1;
             bpf_map_update_elem(&cstat_pid, &pid, &data, BPF_ANY);
         }
-    }
+    //}
 
     return 0;
 }

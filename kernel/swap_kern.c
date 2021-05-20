@@ -13,12 +13,14 @@
  *     
  ***********************************************************************************/
 
+/*
 struct bpf_map_def SEC("maps") tbl_const_swap = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u32),
     .max_entries = 1
 };
+*/
 
 struct bpf_map_def SEC("maps") tbl_swap = {
     .type = BPF_MAP_TYPE_HASH,
@@ -49,12 +51,14 @@ int netdata_swap_readpage(struct pt_regs* ctx)
 {
     netdata_swap_access_t data = {};
     __u64 pid_tgid;
-    __u32 pid = NETDATA_EBPF_APPS_ENABLED;
+    __u32 pid;// = NETDATA_EBPF_APPS_ENABLED;
 
     libnetdata_update_global(&tbl_swap, NETDATA_KEY_SWAP_READPAGE_CALL, 1);
 
+    /*
     __u32 *store_pid = bpf_map_lookup_elem(&tbl_const_swap ,&pid);
     if (*store_pid) {
+    */
         pid_tgid = bpf_get_current_pid_tgid();
         pid = (__u32)(pid_tgid >> 32);
         netdata_swap_access_t *fill = bpf_map_lookup_elem(&tbl_pid_swap ,&pid);
@@ -64,7 +68,7 @@ int netdata_swap_readpage(struct pt_regs* ctx)
             data.read = 1;
             bpf_map_update_elem(&tbl_pid_swap, &pid, &data, BPF_ANY);
         }
-    }
+   // }
 
     return 0;
 }
@@ -74,12 +78,14 @@ int netdata_swap_writepage(struct pt_regs* ctx)
 {
     netdata_swap_access_t data = {};
     __u64 pid_tgid;
-    __u32 pid = NETDATA_EBPF_APPS_ENABLED;
+    __u32 pid;// = NETDATA_EBPF_APPS_ENABLED;
 
     libnetdata_update_global(&tbl_swap, NETDATA_KEY_SWAP_WRITEPAGE_CALL, 1);
 
+    /*
     __u32 *store_pid = bpf_map_lookup_elem(&tbl_const_swap ,&pid);
     if (*store_pid) {
+    */
         pid_tgid = bpf_get_current_pid_tgid();
         pid = (__u32)(pid_tgid >> 32);
         netdata_swap_access_t *fill = bpf_map_lookup_elem(&tbl_pid_swap ,&pid);
@@ -89,7 +95,7 @@ int netdata_swap_writepage(struct pt_regs* ctx)
             data.write = 1;
             bpf_map_update_elem(&tbl_pid_swap, &pid, &data, BPF_ANY);
         }
-    }
+    //}
 
     return 0;
 }
