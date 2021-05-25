@@ -42,7 +42,7 @@ NETDATA_APPS= btrfs \
 	      io_latency_tp \
 	      md \
 	      msync \
-	      network_viewer \
+	      socket \
 	      nfs \
 	      process \
 	      sync \
