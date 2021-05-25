@@ -81,17 +81,6 @@ static unsigned int log2l(unsigned long v)
         return log2(v);
 }
 
-static void netdata_update_u32(u32 *res, u32 value) 
-{
-    if (!value)
-        return;
-
-    __sync_fetch_and_add(res, value);
-    if ( (0xFFFFFFFFFFFFFFFF - *res) <= value) {
-        *res = value;
-    }
-}
-
 #if NETDATASEL == 1 && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0))
 static inline void send_perf_error(struct pt_regs* ctx, int ret, int type, __u32 pid)
 {

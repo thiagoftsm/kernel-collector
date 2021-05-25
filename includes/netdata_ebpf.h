@@ -118,6 +118,21 @@ static inline __u32 libnetdata_select_idx(__u64 val)
     return rlog;
 }
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(4,19,0))
+static __always_inline void netdata_update_u32(u32 *res, u32 value) 
+#else
+static inline void netdata_update_u32(u32 *res, u32 value) 
+#endif
+{
+    if (!value)
+        return;
+
+    __sync_fetch_and_add(res, value);
+    if ( (0xFFFFFFFFFFFFFFFF - *res) <= value) {
+        *res = value;
+    }
+}
+
 // Copied from linux/samples/bpf/tracex1_kern.c
 #define _(P)                                                                   \
         ({                                                                     \
