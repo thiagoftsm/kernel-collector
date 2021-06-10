@@ -27,6 +27,13 @@ struct bpf_map_def SEC("maps") cstat_pid = {
     .max_entries = PID_MAX_DEFAULT
 };
 
+struct bpf_map_def SEC("maps") cstat_z = {
+    .type = BPF_MAP_TYPE_PERCPU_ARRAY,
+    .key_size = sizeof(__u32),
+    .value_size = sizeof(__u64),
+    .max_entries = NETDATA_CONTROLLER_END
+};
+
 /************************************************************************************
  *
  *                                   Probe Section

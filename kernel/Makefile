@@ -82,7 +82,8 @@ all: $(NETDATA_APPS)
 		-include ../includes/netdata_asm_goto.h \
 		-O2 -emit-llvm -c $<
 	$(LLC) -march=bpf -filetype=obj -o p$@ $(<:.c=.ll)
-	sh rename_binaries.sh "$(VER_MAJOR)" "$(VER_MINOR)" "$@"
+	#sh rename_binaries.sh "$(VER_MAJOR)" "$(VER_MINOR)" "$@"
+	sh rename_binaries.sh "$(VER_MAJOR)" "11" "$@"
 
 $(NETDATA_APPS): %: %_kern.o
 
