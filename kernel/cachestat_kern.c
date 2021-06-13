@@ -28,9 +28,9 @@ struct bpf_map_def SEC("maps") cstat_pid = {
 };
 
 struct bpf_map_def SEC("maps") cstat_z = {
-    .type = BPF_MAP_TYPE_PERCPU_ARRAY,
+    .type = BPF_MAP_TYPE_ARRAY,
     .key_size = sizeof(__u32),
-    .value_size = sizeof(__u64),
+    .value_size = sizeof(__u32),
     .max_entries = NETDATA_CONTROLLER_END
 };
 
@@ -47,7 +47,7 @@ int netdata_add_to_page_cache_lru(struct pt_regs* ctx)
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_ADD_TO_PAGE_CACHE_LRU, 1);
 
     __u32 pid = 0;
-    __u64 *apps = bpf_map_lookup_elem(&cstat_z ,&pid);
+    __u32 *apps = bpf_map_lookup_elem(&cstat_z ,&pid);
     if (apps)
         if (*apps == 0)
             return 0;
@@ -72,7 +72,7 @@ int netdata_mark_page_accessed(struct pt_regs* ctx)
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_MARK_PAGE_ACCESSED, 1);
 
     __u32 pid = 0;
-    __u64 *apps = bpf_map_lookup_elem(&cstat_z ,&pid);
+    __u32 *apps = bpf_map_lookup_elem(&cstat_z ,&pid);
     if (apps)
         if (*apps == 0)
             return 0;
@@ -97,7 +97,7 @@ int netdata_account_page_dirtied(struct pt_regs* ctx)
     libnetdata_update_global(&cstat_global, NETDATA_KEY_CALLS_ACCOUNT_PAGE_DIRTIED, 1);
 
     __u32 pid = 0;
-    __u64 *apps = bpf_map_lookup_elem(&cstat_z ,&pid);
+    __u32 *apps = bpf_map_lookup_elem(&cstat_z ,&pid);
     if (apps)
         if (*apps == 0)
             return 0;
