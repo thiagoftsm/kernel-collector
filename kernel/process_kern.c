@@ -95,9 +95,7 @@ int netdata_sys_open(struct pt_regs* ctx)
 #endif
     struct netdata_pid_stat_t *fill;
     struct netdata_pid_stat_t data = { };
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    __u32 pid = (__u32)(pid_tgid >> 32);
-    __u32 tgid = (__u32)( 0x00000000FFFFFFFF & pid_tgid);
+    __u32 key = NETDATA_CONTROLLER_APPS_ENABLED;
 
     libnetdata_update_global(&tbl_total_stats, NETDATA_KEY_CALLS_DO_SYS_OPEN, 1);
 #if NETDATASEL < 2
@@ -106,7 +104,16 @@ int netdata_sys_open(struct pt_regs* ctx)
     } 
 #endif
 
-    fill = bpf_map_lookup_elem(&tbl_pid_stats ,&pid);
+    __u32 *apps = bpf_map_lookup_elem(&process_ctrl ,&key);
+    if (apps)
+        if (*apps == 0)
+            return 0;
+
+
+    __u64 pid_tgid = bpf_get_current_pid_tgid();
+    key = (__u32)(pid_tgid >> 32);
+    __u32 tgid = (__u32)( 0x00000000FFFFFFFF & pid_tgid);
+    fill = bpf_map_lookup_elem(&tbl_pid_stats ,&key);
     if (fill) {
         libnetdata_update_u32(&fill->open_call, 1) ;
 
@@ -130,7 +137,7 @@ int netdata_sys_open(struct pt_regs* ctx)
 #endif
         data.open_call = 1;
 
-        bpf_map_update_elem(&tbl_pid_stats, &pid, &data, BPF_ANY);
+        bpf_map_update_elem(&tbl_pid_stats, &key, &data, BPF_ANY);
     }
 
     return 0;
