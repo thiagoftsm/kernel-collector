@@ -5,8 +5,8 @@
 
 #include "netdata_fs.h"
 
-#define NETDATA_LATENCY_MAX_HD 256L
-#define NETDATA_LATENCY_HISTOGRAM_LENGTH  (NETDATA_FS_MAX_BINS * NETDATA_LATENCY_MAX_HD)
+#define NETDATA_DISK_MAX_HD 256L
+#define NETDATA_DISK_HISTOGRAM_LENGTH  (NETDATA_FS_MAX_BINS * NETDATA_DISK_MAX_HD)
 
 // /sys/kernel/debug/tracing/events/block/block_rq_issue/
 struct netdata_block_rq_issue {
@@ -36,11 +36,6 @@ typedef struct netdata_disk_key {
     dev_t dev;
     sector_t sector;
 } netdata_disk_key_t;
-
-typedef struct netdata_disk_value {
-    u64 timestamp;
-    unsigned int bytes;
-} netdata_disk_value_t;
 
 typedef struct netdata_bootsector {
     u64 start_sector;

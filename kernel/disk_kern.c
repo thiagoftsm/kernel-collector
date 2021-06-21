@@ -21,19 +21,7 @@ struct bpf_map_def SEC("maps") tbl_disk_rcall = {
 #endif
     .key_size = sizeof(block_key_t),
     .value_size = sizeof(__u64),
-    .max_entries = NETDATA_LATENCY_HISTOGRAM_LENGTH
-};
-
-// NOT HISTOGRAM, VALUES PER SECOND
-struct bpf_map_def SEC("maps") tbl_disk_rbytes = {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))
-    .type = BPF_MAP_TYPE_HASH,
-#else
-    .type = BPF_MAP_TYPE_PERCPU_HASH,
-#endif
-    .key_size = sizeof(block_key_t),
-    .value_size = sizeof(__u64),
-    .max_entries = NETDATA_LATENCY_MAX_HD
+    .max_entries = NETDATA_DISK_HISTOGRAM_LENGTH
 };
 
 struct bpf_map_def SEC("maps") tbl_disk_wcall = {
@@ -44,18 +32,7 @@ struct bpf_map_def SEC("maps") tbl_disk_wcall = {
 #endif
     .key_size = sizeof(block_key_t),
     .value_size = sizeof(__u64),
-    .max_entries = NETDATA_LATENCY_HISTOGRAM_LENGTH
-};
-
-struct bpf_map_def SEC("maps") tbl_disk_wbytes = {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))
-    .type = BPF_MAP_TYPE_HASH,
-#else
-    .type = BPF_MAP_TYPE_PERCPU_HASH,
-#endif
-    .key_size = sizeof(block_key_t),
-    .value_size = sizeof(__u64),
-    .max_entries = NETDATA_LATENCY_MAX_HD
+    .max_entries = NETDATA_DISK_HISTOGRAM_LENGTH
 };
 
 // Temporary use only
@@ -66,7 +43,7 @@ struct bpf_map_def SEC("maps") tmp_disk_tp_stat = {
     .type = BPF_MAP_TYPE_PERCPU_HASH,
 #endif
     .key_size = sizeof(netdata_disk_key_t),
-    .value_size = sizeof(netdata_disk_value_t),
+    .value_size = sizeof(__u64),
     .max_entries = 8192
 };
 
@@ -92,9 +69,7 @@ int netdata_block_rq_issue(struct netdata_block_rq_issue *ptr)
     if (key.sector < 0)
         key.sector = 0;
 
-    netdata_disk_value_t value = {};
-    value.timestamp = bpf_ktime_get_ns();
-    value.bytes = ptr->bytes;
+    __u64 value = bpf_ktime_get_ns();
 
     bpf_map_update_elem(&tmp_disk_tp_stat, &key, &value, BPF_ANY);
 
@@ -104,7 +79,7 @@ int netdata_block_rq_issue(struct netdata_block_rq_issue *ptr)
 SEC("tracepoint/block/block_rq_complete")
 int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
 {
-    netdata_disk_value_t *fill;
+    __u64 *fill;
     netdata_disk_key_t key = {};
     block_key_t blk = {};
     key.dev = ptr->dev;
@@ -122,12 +97,10 @@ int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
     int selector = ((ptr->rwbs[0] == 'F') || (ptr->rwbs[0] == 'S') || (ptr->rwbs[0] == 'W') ||
                     (ptr->rwbs[1] == 'F') || (ptr->rwbs[1] == 'S') || (ptr->rwbs[0] == 'W'));
 
-    u64 bytes = (u64)fill->bytes;
-
     // calculate and convert to microsecond
     u64 curr = bpf_ktime_get_ns();
     __u64 data, *update;
-    curr -= fill->timestamp;
+    curr -= *fill;
     curr /= 1000;
 
     blk.bin = libnetdata_select_idx(curr, NETDATA_FS_MAX_BINS_POS);
@@ -141,16 +114,6 @@ int netdata_block_rq_complete(struct netdata_block_rq_complete *ptr)
     } else {
         data = 1;
         bpf_map_update_elem(tbl, &blk, &data, BPF_ANY);
-    }
-
-    blk.bin =  0;
-
-    tbl = (!selector)?&tbl_disk_rbytes:&tbl_disk_wbytes;
-    update = bpf_map_lookup_elem(tbl ,&blk);
-    if (update) {
-        libnetdata_update_u64(update, bytes);
-    } else {
-        bpf_map_update_elem(tbl, &blk, &bytes, BPF_ANY);
     }
 
     bpf_map_delete_elem(&tmp_disk_tp_stat, &key);
