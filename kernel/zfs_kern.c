@@ -53,14 +53,14 @@ static inline int netdata_zfs_entry()
     return 0;
 }
 
-SEC("kprobe/zpl_read")
-int netdata_zpl_read(struct pt_regs *ctx) 
+SEC("kprobe/zpl_iter_read")
+int netdata_zpl_iter_read(struct pt_regs *ctx) 
 {
     return netdata_zfs_entry();
 }
 
-SEC("kprobe/zpl_write")
-int netdata_zpl_write(struct pt_regs *ctx) 
+SEC("kprobe/zpl_iter_write")
+int netdata_zpl_iter_write(struct pt_regs *ctx) 
 {
     return netdata_zfs_entry();
 }
@@ -100,8 +100,8 @@ static void netdata_zfs_store_bin(__u32 bin, __u32 selection)
     bpf_map_update_elem(&tbl_zfs, &idx, &data, BPF_ANY);
 }
 
-SEC("kretprobe/zpl_read")
-int netdata_ret_zpl_read(struct pt_regs *ctx)
+SEC("kretprobe/zpl_iter_read")
+int netdata_ret_zpl_iter_read(struct pt_regs *ctx)
 {
     __u64 *fill, data;
     __u64 pid_tgid = bpf_get_current_pid_tgid();
@@ -126,8 +126,8 @@ int netdata_ret_zpl_read(struct pt_regs *ctx)
     return 0;
 }
 
-SEC("kretprobe/zpl_write")
-int netdata_ret_zpl_write(struct pt_regs *ctx)
+SEC("kretprobe/zpl_iter_write")
+int netdata_ret_zpl_iter_write(struct pt_regs *ctx)
 {
     __u64 *fill, data;
     __u64 pid_tgid = bpf_get_current_pid_tgid();
