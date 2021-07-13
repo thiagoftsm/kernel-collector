@@ -2,6 +2,7 @@
 #include <linux/bpf.h>
 #include <linux/ptrace.h>
 #include <linux/genhd.h>
+#include <linux/version.h>
 #include <linux/fs.h>
 
 #include "bpf_helpers.h"
@@ -62,8 +63,13 @@ static inline int netdata_btrfs_entry()
     return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,0))
+SEC("kprobe/btrfs_file_read_iter")
+int netdata_btrfs_file_read_iter(struct pt_regs *ctx) 
+#else
 SEC("kprobe/generic_file_read_iter")
 int netdata_generic_file_read_iter(struct pt_regs *ctx) 
+#endif
 {
             /*
     __u32 key = 0;
@@ -91,8 +97,8 @@ int netdata_btrfs_file_write_iter(struct pt_regs *ctx)
     return netdata_btrfs_entry();
 }
 
-SEC("kprobe/generic_file_open")
-int netdata_generic_file_open(struct pt_regs *ctx) 
+SEC("kprobe/btrfs_file_open")
+int netdata_btrfs_file_open(struct pt_regs *ctx) 
 {
     return netdata_btrfs_entry();
 }
@@ -126,8 +132,13 @@ static void netdata_btrfs_store_bin(__u32 bin, __u32 selection)
     bpf_map_update_elem(&tbl_btrfs, &idx, &data, BPF_ANY);
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,0))
+SEC("kretprobe/btrfs_file_read_iter")
+int netdata_ret_btrfs_file_read_iter(struct pt_regs *ctx)
+#else
 SEC("kretprobe/generic_file_read_iter")
 int netdata_ret_generic_file_read_iter(struct pt_regs *ctx)
+#endif
 {
     __u64 *fill, data;
     __u64 pid_tgid = bpf_get_current_pid_tgid();
@@ -178,8 +189,8 @@ int netdata_ret_btrfs_file_write_iter(struct pt_regs *ctx)
     return 0;
 }
 
-SEC("kretprobe/generic_file_open")
-int netdata_ret_generic_file_open(struct pt_regs *ctx)
+SEC("kretprobe/btrfs_file_open")
+int netdata_ret_btrfs_file_open(struct pt_regs *ctx)
 {
     __u64 *fill, data;
     __u64 pid_tgid = bpf_get_current_pid_tgid();
