@@ -9,6 +9,7 @@
 #include "netdata_cache.h"
 #include "netdata_dc.h"
 #include "netdata_disk.h"
+#include "netdata_mount.h"
 #include "netdata_fs.h"
 #include "netdata_network.h"
 #include "netdata_process.h"
@@ -150,3 +151,4 @@ static inline __u32 libnetdata_select_idx(__u64 val, __u32 end)
 #endif
 
 #endif /* _NETDATA_EBPF_ */
+
