@@ -63,6 +63,8 @@ static inline int netdata_btrfs_entry()
     return 0;
 }
 
+// We need different probes here, because struct file_operations btrfs_file_operations
+// was modified when 5.10 was released.
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,0))
 SEC("kprobe/btrfs_file_read_iter")
 int netdata_btrfs_file_read_iter(struct pt_regs *ctx) 
