@@ -21,6 +21,7 @@ This directory has two headers:
 
 Right now we have two `eBPF` program collections:
 
+-  `btrfs_kern.c`          : eBPF program that provides btrfs monitoring.
 -  `cachestat_kern.c`      : eBPF program that provides Linux page cache monitoring.
 -  `dc_kern.c`             : eBPF program that provides Linux directory cache monitoring.
 -  `ext4_kern.c`           : eBPF program that provides ext4 monitoring.
