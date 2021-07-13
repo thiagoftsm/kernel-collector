@@ -17,7 +17,7 @@ struct bpf_map_def SEC("maps") tbl_mount = {
 #else
     .type = BPF_MAP_TYPE_PERCPU_HASH,
 #endif
-    .key_size = sizeof(__u64),
+    .key_size = sizeof(__u32),
     .value_size = sizeof(__u64),
     .max_entries = NETDATA_MOUNT_END
 };
@@ -37,7 +37,7 @@ int netdata_syscall_mount(struct pt_regs* ctx)
 {
     libnetdata_update_global(&tbl_mount, NETDATA_KEY_MOUNT_CALL, 1);
 #if NETDATASEL < 2
-    int ret = (ssize_t)PT_REGS_RC(ctx);
+    int ret = (int)PT_REGS_RC(ctx);
     if (ret < 0)
         libnetdata_update_global(&tbl_mount, NETDATA_KEY_MOUNT_ERROR, 1);
 #endif
@@ -54,7 +54,7 @@ int netdata_syscall_umount(struct pt_regs* ctx)
 {
     libnetdata_update_global(&tbl_mount, NETDATA_KEY_UMOUNT_CALL, 1);
 #if NETDATASEL < 2
-    int ret = (ssize_t)PT_REGS_RC(ctx);
+    int ret = (int)PT_REGS_RC(ctx);
     if (ret < 0)
         libnetdata_update_global(&tbl_mount, NETDATA_KEY_UMOUNT_ERROR, 1);
 #endif
