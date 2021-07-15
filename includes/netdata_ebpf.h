@@ -9,6 +9,7 @@
 #include "netdata_cache.h"
 #include "netdata_dc.h"
 #include "netdata_disk.h"
+#include "netdata_md.h"
 #include "netdata_mount.h"
 #include "netdata_fs.h"
 #include "netdata_network.h"

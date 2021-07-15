@@ -41,6 +41,7 @@ NETDATA_APPS= btrfs \
 	      fsync \
 	      mount \
 	      msync \
+	      md \
 	      nfs \
 	      socket \
 	      process \
