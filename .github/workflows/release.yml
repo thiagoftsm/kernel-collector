@@ -5,12 +5,16 @@ on:
   push:
     tags:
       - 'v*'
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-artifacts:
     name: Build Artifacts
     strategy:
       matrix:
         kernel_version:
+          - '5.15.0'
           - '5.11.2'
           - '5.10.3'
           - '5.4.85'
@@ -23,34 +27,31 @@ jobs:
           - glibc
           - musl
         exclude:
-          # excludes static on 4.16.18 (https://github.com/netdata/kernel-collector/issues/153)
-          - kernel_version: 4.16.18
-            libc: static
-          # excludes static on 4.18.18 (https://github.com/netdata/kernel-collector/issues/153)
-          - kernel_version: 4.18.0
-            libc: static
           # excludes static on 3.10.0 (https://github.com/netdata/kernel-collector/issues/153)
           - kernel_version: 3.10.0
             libc: static
-          # excludes musl on 4.18.0
-          - kernel_version: 4.18.0
-            libc: musl
-          # excludes musl on 4.16.18
-          - kernel_version: 4.16.18
-            libc: musl
           # excludes musl on 3.10.0
           - kernel_version: 3.10.0
             libc: musl
+          # excludes musl and static on 5.15.0 until developed is finished
+          - kernel_version: 5.15.0
+            libc: musl
+          - kernel_version: 5.15.0
+            libc: static
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Run build.sh
         run: |
           if [ ${{ matrix.kernel_version }} = "4.18.0" ]; then
             os=centos8
           elif [ ${{ matrix.kernel_version }} = "3.10.0" ]; then
             os=centos7
+          elif [ ${{ matrix.kernel_version }} = "5.15.0" ]; then
+            os=core
           else
             os=generic
           fi
