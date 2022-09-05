@@ -3,7 +3,8 @@ LLC = llc
 KERNELSOURCE = /usr/src/linux
 LIBBPF = ../libbpf
 LIBBPF_HEADERS = ../.local_libbpf
-ARCH := $(shell uname -m | sed 's/x86_64/x86/')
+#ARCH := $(shell uname -m | sed 's/x86_64/x86/')
+ARCH := $(shell ../tools/identify_arch.sh)
 
 EXTRA_CFLAGS += -fno-stack-protector
 
